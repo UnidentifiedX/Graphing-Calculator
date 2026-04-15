@@ -1,0 +1,17 @@
+[x] Abs Value: Can it handle |x|?
+
+[x] Constants: Are π and e recognized?
+
+[ ] Implicit Mult: Does 2x, x y, and 2sin(x) work?
+
+[x] Comma Support: Does min(x, y, z) work for multiple args?
+
+[ ] Domain Handling: If the parser sees 1/0 or sqrt(-1), does the evaluator crash or return NaN?
+
+[ ] Scientific Notation: Can it parse 1e-5 or 2.5E6?
+
+[ ] Implicit Leading Zero: Does .5 get parsed as 0.5?
+
+[ ] Keep in pi-notation: Can we display 2pi instead of 6.283185307179586?
+
+[ ] Nice error handling: Standardize error messages for syntax errors, undefined variables, and math errors.
