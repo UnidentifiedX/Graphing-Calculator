@@ -1,4 +1,4 @@
-from .pow import pow
+from core.functions.pow import pow
 
 def nroot(x, n): # Might change to Newton-Raphson if this is too imprecise
     if n <= 0:

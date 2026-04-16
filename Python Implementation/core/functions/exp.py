@@ -1,4 +1,4 @@
-from constants import LN2, INV_LN2
+from core.constants import LN2, INV_LN2
 import math
 
 def exp(x): # TODO: use minimax approximation for better accuracy

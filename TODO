@@ -15,3 +15,5 @@
 [ ] Keep in pi-notation: Can we display 2pi instead of 6.283185307179586?
 
 [ ] Nice error handling: Standardize error messages for syntax errors, undefined variables, and math errors.
+
+[ ] Implicit parantheses closing

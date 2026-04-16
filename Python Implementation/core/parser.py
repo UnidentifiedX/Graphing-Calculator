@@ -1,5 +1,5 @@
-from lexer import Lexer, SyntaxToken, SyntaxKind
-from expressions import NumberExpression, BinaryExpression, UnaryExpression, CallExpression, VariableExpression, PostfixExpression
+from core.lexer import Lexer, SyntaxToken, SyntaxKind
+from core.expressions import NumberExpression, BinaryExpression, UnaryExpression, CallExpression, VariableExpression, PostfixExpression
 
 BINDING_POWER = {
     SyntaxKind.NUMBER_TOKEN: 0,
@@ -28,9 +28,21 @@ IMPLICIT_RIGHT_TOKENS = {
 }
 
 class Parser:
-    def __init__(self, input_string):
-        self.tokens: list[SyntaxToken] = Lexer(input_string).tokenize()
+    # def __init__(self, input_string):
+    #     self.tokens: list[SyntaxToken] = Lexer(input_string).tokenize()
+    #     self.position = 0
+    def __init__(self, tokens: list[SyntaxToken]):
+        self.tokens = tokens
         self.position = 0
+    
+    @classmethod
+    def from_string(cls, input_string):
+        tokens = Lexer(input_string).tokenize()
+        return cls(tokens)
+    
+    @classmethod
+    def from_tokens(cls, tokens):
+        return cls(tokens)
     
     def peek(self):
         if self.position < len(self.tokens):

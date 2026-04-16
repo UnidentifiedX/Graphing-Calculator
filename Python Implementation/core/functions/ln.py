@@ -1,4 +1,4 @@
-from constants import LN2
+from core.constants import LN2
 
 def ln(x): # TODO: use Cherbyshev approxmiation in the future
     if x <= 0:

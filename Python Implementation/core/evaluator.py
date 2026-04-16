@@ -1,18 +1,19 @@
-from parser import Parser
-from expressions import NumberExpression, VariableExpression, UnaryExpression, BinaryExpression, CallExpression, PostfixExpression
-from parser import SyntaxKind
+from core.parser import Parser
+from core.symbols import SyntaxKind
+from core.lexer import SyntaxToken
+from core.expressions import NumberExpression, VariableExpression, UnaryExpression, BinaryExpression, CallExpression, PostfixExpression
 
-from functions.pow import pow
-from functions.abs import abs
-from functions.sqrt import sqrt
-from functions.exp import exp
-from functions.ln import ln
-from functions.log import log
-from functions.nroot import nroot
+from core.functions.pow import pow
+from core.functions.abs import abs
+from core.functions.sqrt import sqrt
+from core.functions.exp import exp
+from core.functions.ln import ln
+from core.functions.log import log
+from core.functions.nroot import nroot
 
-from operators.factorial import factorial
+from core.operators.factorial import factorial
 
-from constants import PI, E
+from core.constants import PI, E
 
 FUNCTIONS = {
     "abs": abs,
@@ -35,8 +36,20 @@ CONSTANTS = {
 }
 
 class Evaluator:
-    def __init__(self, input_string):
-        self.ast = Parser(input_string).parse()
+    def __init__(self, ast):
+        self.ast = ast
+
+    @classmethod
+    def from_string(cls, input_string):
+        parser = Parser.from_string(input_string)
+        ast = parser.parse()
+        return cls(ast)
+    
+    @classmethod
+    def from_tokens(cls, tokens):
+        parser = Parser.from_tokens(tokens)
+        ast = parser.parse()
+        return cls(ast)
 
     def evaluate(self):
         return self.ast.accept(self)

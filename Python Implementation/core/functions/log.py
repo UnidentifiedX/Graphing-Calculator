@@ -1,5 +1,5 @@
-from .ln import ln
-from constants import INV_LN10
+from core.functions.ln import ln
+from core.constants import INV_LN10
 
 def log(x):
     if x <= 0:
