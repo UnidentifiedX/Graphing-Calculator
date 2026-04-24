@@ -3,27 +3,11 @@ from core.symbols import SyntaxKind
 from core.lexer import SyntaxToken
 from core.expressions import NumberExpression, VariableExpression, UnaryExpression, BinaryExpression, CallExpression, PostfixExpression
 
-from core.functions.pow import pow
-from core.functions.abs import abs
-from core.functions.sqrt import sqrt
-from core.functions.exp import exp
-from core.functions.ln import ln
-from core.functions.log import log
-from core.functions.nroot import nroot
+from core.functions.functions import FUNCTION_INFO, BUILTIN_FUNCTION_STRING_MAP
 
 from core.operators.factorial import factorial
 
 from core.constants import PI, E
-
-FUNCTIONS = {
-    "abs": abs,
-    "sqrt": sqrt,
-    "exp": exp,
-    "ln": ln,
-    "log": log,
-    "pow": pow,
-    "nroot": nroot
-}
 
 POSTFIX_OPERATORS = {
     SyntaxKind.FACTORIAL_TOKEN: factorial,
@@ -99,8 +83,8 @@ class Evaluator:
         raise ValueError(f"Unsupported postfix operator: {node.operator.kind}")
 
     def visit_call(self, node: CallExpression):
-        if node.identifier in FUNCTIONS:
-            function = FUNCTIONS[node.identifier]
+        if node.identifier in BUILTIN_FUNCTION_STRING_MAP:
+            function = FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier]].func
             arguments = [arg.accept(self) for arg in node.arguments]
             return function(*arguments)
         
