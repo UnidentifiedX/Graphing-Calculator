@@ -40,19 +40,31 @@ class NumberNode(Node):
         super().__init__(NodeType.NUMBER)
         self.num_str = num_str
 
+    def __repr__(self):
+        return f"NumberNode({self.num_str})"
+
 class AtomicNode(Node):
     def __init__(self, token: SyntaxToken):
         super().__init__(NodeType.ATOM)
         self.token = token
+    
+    def __repr__(self):
+        return f"AtomicNode({self.token})"
 
 class FunctionNode(Node):
     def __init__(self, identifier: FunctionNames):
         super().__init__(NodeType.FUNCTION)
         self.identifier = identifier
 
+    def __repr__(self):
+        return f"FunctionNode({self.identifier})"
+
 class EndOfArgumentNode(Node):
     def __init__(self):
         super().__init__(NodeType.ENDOFARGUMENT)
+    
+    def __repr__(self):
+        return "EndOfArgumentNode()"
 
 class TokenExpression:
     def __init__(self):
@@ -65,6 +77,8 @@ class TokenExpression:
     def shift_cursor(self, direction):
         """
         Direction: -1 for left, +1 for right
+
+        This function doesn't care if the current char_index is valid or not; as long as the node_index is valid, it will shift the cursor in the intended direction and then fix the char_index accordingly based on the new node_index
         """
         current_node = self.node_buffer[self.node_index]
         is_between_nodes = self._is_between_nodes()
@@ -89,7 +103,7 @@ class TokenExpression:
                     self.char_index = -1
                     self.node_index += 1
             else:
-                raise ValueError("Invalid node type")
+                raise ValueError(f"Invalid node type: {current_node.type}, current buffer state: {self.node_buffer[:self.size]}")
         elif direction == -1:
             if self.node_index == 0 and is_between_nodes: # at the beginning of the entire expression, can't move left
                 return
@@ -117,6 +131,11 @@ class TokenExpression:
                     self.node_buffer[self.node_index + 1 + i] = EndOfArgumentNode()
                 self.size += (arity + 1)
             else:
+                if node.type == NodeType.NUMBER and self.node_index > 0: # new node is number and there is a previous node
+                    previous_node = self.node_buffer[self.node_index - 1]
+                    if previous_node and previous_node.type == NodeType.NUMBER:
+                        previous_node.num_str += node.num_str
+                        return
                 self.node_buffer[self.node_index] = node
                 self.size += 1
             
@@ -219,11 +238,47 @@ class TokenExpression:
             else:
                 self._delete_node_atomically()
         else:
-            current_node.num_str = current_node.num_str[:self.char_index] + current_node.num_str[self.char_index + 1:]
+            right = current_node.num_str[self.char_index + 1:]
+            current_node.num_str = current_node.num_str[:self.char_index] + right
+            if len(right) == 0:
+                self.shift_cursor(1)
 
     def backspace_node(self):
         self.shift_cursor(-1)
         self.delete_node()
+
+    def generate_token_list(self):
+        token_list = []
+        arity_stack = []
+        for i in range(self.size):
+            node = self.node_buffer[i]
+            match node.type:
+                case NodeType.NUMBER:
+                    token_list.append(SyntaxToken(SyntaxKind.NUMBER_TOKEN, node.num_str))
+                case NodeType.ATOM:
+                    token_list.append(node.token)
+                case NodeType.FUNCTION:
+                    token_list.append(SyntaxToken(SyntaxKind.VARIABLE_TOKEN, FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["name"])) # variable token with function name as value (not enum because the parser is also built to handle user defined functions in the future)
+                    token_list.append(SyntaxToken(SyntaxKind.OPEN_PAREN_TOKEN, None))
+                    arity_stack.append(FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["arity"])
+                case NodeType.ENDOFARGUMENT:
+                    if not arity_stack:
+                        raise ValueError("Invalid state: end of argument node without corresponding function node")
+                    
+                    arity_stack[-1] -= 1
+
+                    if arity_stack[-1] > 0:
+                        token_list.append(SyntaxToken(SyntaxKind.COMMA_TOKEN, ","))
+                    elif arity_stack[-1] == 0:
+                        token_list.append(SyntaxToken(SyntaxKind.CLOSE_PAREN_TOKEN, None))
+                        arity_stack.pop()
+        return token_list
+    
+    def clear_buffer(self):
+        self.node_buffer = [None] * 256
+        self.node_index = 0
+        self.char_index = -1
+        self.size = 0
 
     def _is_between_nodes(self):
         return self.char_index == -1 or self.char_index == 0

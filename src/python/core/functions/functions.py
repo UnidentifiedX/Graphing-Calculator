@@ -7,6 +7,9 @@ from core.functions.ln import ln
 from core.functions.log import log
 from core.functions.pow import pow
 from core.functions.nroot import nroot
+from core.functions.sin import sin
+from core.functions.cos import cos
+from core.functions.tan import tan
 
 class FunctionType(Enum):
     ABS = auto()
@@ -16,6 +19,9 @@ class FunctionType(Enum):
     LOG = auto()
     POW = auto()
     NROOT = auto()
+    SIN = auto()
+    COS = auto()
+    TAN = auto()
 
 FUNCTION_INFO = {
     FunctionType.ABS: {"name": "abs", "arity": 1, "func": abs},
@@ -25,6 +31,9 @@ FUNCTION_INFO = {
     FunctionType.LOG: {"name": "log", "arity": 2, "func": log},
     FunctionType.POW: {"name": "pow", "arity": 2, "func": pow},
     FunctionType.NROOT: {"name": "nroot", "arity": 2, "func": nroot},
+    FunctionType.SIN: {"name": "sin", "arity": 1, "func": sin},
+    FunctionType.COS: {"name": "cos", "arity": 1, "func": cos},
+    FunctionType.TAN: {"name": "tan", "arity": 1, "func": tan},
 }
 
 class FunctionNames(Enum):
@@ -35,6 +44,9 @@ class FunctionNames(Enum):
     LOG = "log"
     POW = "pow"
     NROOT = "nroot"
+    SIN = "sin"
+    COS = "cos"
+    TAN = "tan"
 
 BUILTIN_FUNCTION_STRING_MAP = {
     FunctionNames.ABS.value: FunctionType.ABS,
@@ -44,4 +56,7 @@ BUILTIN_FUNCTION_STRING_MAP = {
     FunctionNames.LOG.value: FunctionType.LOG,
     FunctionNames.POW.value: FunctionType.POW,
     FunctionNames.NROOT.value: FunctionType.NROOT,
+    FunctionNames.SIN.value: FunctionType.SIN,
+    FunctionNames.COS.value: FunctionType.COS,
+    FunctionNames.TAN.value: FunctionType.TAN,
 }

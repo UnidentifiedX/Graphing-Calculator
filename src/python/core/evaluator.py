@@ -84,7 +84,7 @@ class Evaluator:
 
     def visit_call(self, node: CallExpression):
         if node.identifier in BUILTIN_FUNCTION_STRING_MAP:
-            function = FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier]].func
+            function = FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier]]["func"]
             arguments = [arg.accept(self) for arg in node.arguments]
             return function(*arguments)
         

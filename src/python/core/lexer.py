@@ -6,6 +6,9 @@ class SyntaxToken:
         self.kind = kind
         self.value = value
 
+    def __repr__(self):
+        return f"SyntaxToken({self.kind}, {self.value})"
+
 class Lexer:
     def __init__(self, input_string):
         self.input_string = input_string
@@ -41,7 +44,7 @@ class Lexer:
         if number_string == ".":
             raise ValueError("Invalid number format: '.' is not a valid number")
 
-        return float(number_string) if has_decimal_point else int(number_string)
+        return number_string
 
     def parse_identifier(self):
         identifier_string = ""

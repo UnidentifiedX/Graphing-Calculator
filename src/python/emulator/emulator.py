@@ -1,16 +1,19 @@
 import pygame
-from emulator.buttons import ButtonMatrix, UIStateButton, TokenButton, NumberButton, ControlButton
+from emulator.buttons import ButtonMatrix, UIStateButton, AtomicTokenButton, NumberTokenButton, ControlButton, FunctionTokenButton, Button
 from core.symbols import SyntaxKind
 from core.evaluator import Evaluator
 from core.lexer import SyntaxToken
 from enum import Enum, auto
-from emulator.token_expression import TokenExpression
+from emulator.token_expression import TokenExpression, AtomicNode, NumberNode, FunctionNode, NodeType
+from core.functions.functions import FunctionNames
 
 BUTTON_MATRIX = [
-    [NumberButton("7"), NumberButton("8"), NumberButton("9"), TokenButton("/", SyntaxToken(SyntaxKind.DIVIDE_TOKEN, "/"))],
-    [NumberButton("4"), NumberButton("5"), NumberButton("6"), TokenButton("*", SyntaxToken(SyntaxKind.MULTIPLY_TOKEN, "*"))],
-    [NumberButton("1"), NumberButton("2"), NumberButton("3"), TokenButton("-", SyntaxToken(SyntaxKind.MINUS_TOKEN, "-"))],
-    [NumberButton("0"), NumberButton("."), ControlButton("="), TokenButton("+", SyntaxToken(SyntaxKind.PLUS_TOKEN, "+"))],
+    [FunctionTokenButton("sin", FunctionNames.SIN), FunctionTokenButton("cos", FunctionNames.COS), FunctionTokenButton("tan", FunctionNames.TAN), FunctionTokenButton("^", FunctionNames.POW)],
+    [AtomicTokenButton("(", SyntaxKind.OPEN_PAREN_TOKEN), AtomicTokenButton(")", SyntaxKind.CLOSE_PAREN_TOKEN), ControlButton("AC"), ControlButton("DEL")],
+    [NumberTokenButton("7"), NumberTokenButton("8"), NumberTokenButton("9"), AtomicTokenButton("/", SyntaxKind.DIVIDE_TOKEN)],
+    [NumberTokenButton("4"), NumberTokenButton("5"), NumberTokenButton("6"), AtomicTokenButton("*", SyntaxKind.MULTIPLY_TOKEN)],
+    [NumberTokenButton("1"), NumberTokenButton("2"), NumberTokenButton("3"), AtomicTokenButton("-", SyntaxKind.MINUS_TOKEN)],
+    [NumberTokenButton("0"), NumberTokenButton("."), ControlButton("="), AtomicTokenButton("+", SyntaxKind.PLUS_TOKEN)],
 ]
 
 class Emulator:
@@ -35,59 +38,50 @@ class Emulator:
     def visit_ui_state_button(self, button):
         pass
 
-    def visit_token_button(self, button):
-        # what happens in the middle of a number node
-        # what happens in the middle of nodes
-        pass
+    def visit_token_button(self, button: Button):
+        self.token_expression.insert_node(button.create_node())
+        self.display_expression()
 
-    def visit_number_button(self, button):
-        # what happens in the middle of a number node
-        # what happens in the middle of nodes
-        pass
+    def visit_control_button(self, button: ControlButton):
+        match button.label:
+            case "=":
+                print(self.token_expression.node_buffer[:self.token_expression.size])
+                tokens = self.token_expression.generate_token_list()
+                print(tokens)
+                evaluator = Evaluator.from_tokens(tokens)
+                result = evaluator.evaluate()
+                print("Result:", result)
+                self.token_expression.clear_buffer()
+            case "AC":
+                self.token_expression.clear_buffer()
+            case "DEL":
+                self.token_expression.backspace_node()
+                self.display_expression()
 
-    def visit_control_button(self, button):
-        pass
-
-
-    # def push_token(self, token):
-    #     if self.pointer < len(self.tokens):
-    #         self.tokens[self.pointer] = token
-    #         self.pointer += 1
-    #     else:
-    #         raise IndexError("Token buffer overflow")
-
-    # def visit_ui_state_button(self, button):
-    #     print(f"UI State Button '{button.label}' clicked")
-
-    # def visit_token_button(self, button):
-    #     self.flush_number_buffer()
-    #     self.push_token(button.token)
-
-    # def visit_number_button(self, button):
-    #     self.number_buffer += button.label
-
-    # def visit_control_button(self, button):
-    #     match button.label:
-    #         case "=":
-    #             self.flush_number_buffer()
-    #             evaluation_result = Evaluator.from_tokens(self.tokens[:self.pointer]).evaluate()
-    #             print(f"Evaluation result: {evaluation_result}")
-    #             self.reset()
-
-    # def flush_number_buffer(self):
-    #     self.push_token(self.parse_number())
-
-    # def parse_number(self):
-    #     if not self.number_buffer:
-    #         raise ValueError("No number to parse")
-    #     if self.number_buffer.count(".") > 1:
-    #         raise ValueError("Invalid number format: more than one decimal point")
-            
-    #     number = SyntaxToken(SyntaxKind.NUMBER_TOKEN, float(self.number_buffer) if "." in self.number_buffer else int(self.number_buffer))
-    #     self.number_buffer = ""
-    #     return number
-    
-    # def reset(self):
-    #     self.tokens = [None] * 256
-    #     self.pointer = 0
-    #     self.number_buffer = ""
+    def display_expression(self):
+        # For now let's just print the expression to the console
+        print("\033[1A\x1b[2K", end="")
+        for node in self.token_expression.node_buffer[:self.token_expression.size]:
+            if node.type == NodeType.ATOM:
+                match node.token.kind:
+                    case SyntaxKind.PLUS_TOKEN:
+                        print("+", end="")
+                    case SyntaxKind.MINUS_TOKEN:
+                        print("-", end="")
+                    case SyntaxKind.MULTIPLY_TOKEN:
+                        print("*", end="")
+                    case SyntaxKind.DIVIDE_TOKEN:
+                        print("/", end="")
+                    case SyntaxKind.OPEN_PAREN_TOKEN:
+                        print("(", end="")
+                    case SyntaxKind.CLOSE_PAREN_TOKEN:
+                        print(")", end="")
+                    case SyntaxKind.FACTORIAL_TOKEN:
+                        print("!", end="")
+                    case SyntaxKind.PERCENTAGE_TOKEN:
+                        print("%", end="")
+            elif node.type == NodeType.NUMBER:
+                print(node.num_str, end="")
+            elif node.type == NodeType.FUNCTION:
+                print(node.identifier.value, end="")
+        print()

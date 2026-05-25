@@ -103,7 +103,10 @@ class Parser:
     def nud(self, token: SyntaxToken):
         match token.kind:
             case SyntaxKind.NUMBER_TOKEN:
-                return NumberExpression(token.value)
+                if "." in token.value:
+                    return NumberExpression(float(token.value))
+                
+                return NumberExpression(int(token.value))
             case SyntaxKind.VARIABLE_TOKEN:
                 # check function call
                 if self.peek().kind == SyntaxKind.OPEN_PAREN_TOKEN:

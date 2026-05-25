@@ -42,7 +42,7 @@ class BinaryExpression(Expression):
         return visitor.visit_binary(self)
 
 class CallExpression(Expression):
-    def __init__(self, identifier, arguments):
+    def __init__(self, identifier: str, arguments):
         self.identifier = identifier
         self.arguments = arguments
 
