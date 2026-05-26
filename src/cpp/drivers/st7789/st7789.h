@@ -1,6 +1,13 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include "fonts.h"
+
+enum class LineStyle {
+    Solid,
+    Dashed,
+    Dotted
+};
 
 struct ST7789 {
     static constexpr int WIDTH = 320;
@@ -13,9 +20,10 @@ struct ST7789 {
     void drawPixel(uint16_t x, uint16_t y, uint16_t color);
     void fillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
     void fillScreen(uint16_t color);
-    void drawChar(uint16_t x, uint16_t y, char c, uint16_t color, int32_t bg = -1);
-    void drawString(uint16_t x, uint16_t y, const char* str, uint16_t color, int32_t bg = -1);
-    void drawParagraph(uint16_t x, uint16_t y, uint16_t w, const char* str, uint16_t color, int32_t bg = -1);
+    void drawHorizontalLine(uint16_t x, uint16_t y, uint16_t w, uint16_t t, uint16_t color, LineStyle style, uint16_t bg = 0xFFFF);
+    void drawChar(uint16_t x, uint16_t y, char c, uint16_t color, uint8_t scale, uint16_t bg = 0xFFFF);
+    void drawString(uint16_t x, uint16_t y, const char* str, uint16_t color, uint8_t scale, uint16_t bg = 0xFFFF);
+    void drawParagraph(uint16_t x, uint16_t y, uint16_t w, const char* str, uint16_t color, FontSize size, uint16_t bg = 0xFFFF);
     void setBrightness(uint8_t brightness); // 0-255
 
 private:
@@ -30,6 +38,6 @@ private:
     void spiInit();
 };
 
-inline uint16_t color565(uint8_t r, uint8_t g, uint8_t b) {
+inline constexpr uint16_t color565(uint8_t r, uint8_t g, uint8_t b) {
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }

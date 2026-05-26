@@ -20,6 +20,9 @@
 #define ST7789_CMD_MADCTL 0x36 // Memory data access control
 #define ST7789_CMD_COLMOD 0x3A // Interface pixel format
 
+constexpr uint8_t FONT_WIDTH_6x8 = 6;
+constexpr uint8_t FONT_HEIGHT_6x8 = 8;
+
 ST7789::ST7789(int pin_cs, int pin_dc, int pin_reset, int pin_sck, int pin_mosi, int pin_pwm)
     : _cs(pin_cs), _dc(pin_dc), _reset(pin_reset), _sck(pin_sck), _mosi(pin_mosi), _pwm(pin_pwm) {}
 
@@ -125,7 +128,6 @@ void ST7789::setWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
     writeCommand(ST7789_CMD_RAMWR);
 }
 
-
 void ST7789::drawPixel(uint16_t x, uint16_t y, uint16_t color) {
     if (x >= WIDTH || y >= HEIGHT) return;
 
@@ -154,42 +156,77 @@ void ST7789::fillScreen(uint16_t color) {
     fillRect(0, 0, WIDTH, HEIGHT, color);
 }
 
-void ST7789::drawChar(uint16_t x, uint16_t y, char c, uint16_t color, int32_t bg) {
-    if (c < 32 || c > 126) return; // Unsupported character
+void ST7789::drawHorizontalLine(uint16_t x, uint16_t y, uint16_t w, uint16_t t, uint16_t color, LineStyle style, uint16_t bg) {
+    if (x >= WIDTH || y >= HEIGHT) return;
+    if (x + w > WIDTH) w = WIDTH - x;
+    if (y + t > HEIGHT) t = HEIGHT - y;
 
-    uint16_t offset = (c - 32) * 10; // Each character is 10 rows
-    for (uint8_t row = 0; row < 10; row++) {
-        uint16_t rowData = Font7x10[offset + row];
-        for (uint8_t col = 0; col < 7; col++) {
-            // uint16_t pixelColor = (rowData & (0x8000 >> col)) ? color : bg; // Start from highest bit
-            if (rowData & (0x8000 >> col)) {
-                drawPixel(x + col, y + row, color);
-            } else if (bg != -1) {
-                drawPixel(x + col, y + row, bg);
+    setWindow(x, y, x + w - 1, y + t - 1);
+
+    pinHigh(_dc);
+    pinLow(_cs);
+
+    for (size_t i = 0; i < t; i++) {
+        for (size_t j = 0; j < w; j++) {
+            bool draw =
+                (style == LineStyle::Solid) ||
+                (style == LineStyle::Dashed && (j / 8) % 2 == 0) ||
+                (style == LineStyle::Dotted && j % 2 == 0);
+
+            uint16_t c = draw ? color : bg;
+
+            uint8_t high = c >> 8;
+            uint8_t low = c & 0xFF;
+
+            spi_write_blocking(ST7789_SPI_PORT, &high, 1);
+            spi_write_blocking(ST7789_SPI_PORT, &low, 1);
+        }
+    }
+
+    pinHigh(_cs);
+}
+
+void ST7789::drawChar(uint16_t x, uint16_t y, char c, uint16_t color, uint8_t scale, uint16_t bg) {
+    if (c < 32 || c > 126) return; // Unsupported character
+    
+    // Font6x8 is const uint8_t Font6x8[][8], so use pointer-to-array
+    const uint8_t (*charMap)[8] = Font6x8;
+
+    for (uint8_t row = 0; row < FONT_HEIGHT_6x8; row++) {
+        uint8_t rowData = charMap[c - 32][row];
+
+        for (uint8_t col = 0; col < FONT_WIDTH_6x8; col++) {
+            // 8-bit bitmask (MSB → LSB)
+            if (rowData & (0x80 >> col)) {
+                fillRect(x + col * scale, y + row * scale, scale, scale, color);
+            } 
+            else {
+                fillRect(x + col * scale, y + row * scale, scale, scale, bg);
             }
         }
     }
 }
 
-void ST7789::drawString(uint16_t x, uint16_t y, const char* str, uint16_t color, int32_t bg) {
+void ST7789::drawString(uint16_t x, uint16_t y, const char* str, uint16_t color, uint8_t scale, uint16_t bg) {
     // don't draw anything off the screen
     while (*str) {
-        if (x + 7 >= WIDTH) break; // No more space for characters
-        drawChar(x, y, *str, color, bg);
-        x += 8; // 7 pixels + 1 pixel spacing
+        if (x + FONT_WIDTH_6x8 * scale >= WIDTH) break; // No more space for characters
+
+        drawChar(x, y, *str, color, scale, bg);
+        x += FONT_WIDTH_6x8 * scale;
         str++;
     }
 }
 
-void ST7789::drawParagraph(uint16_t x, uint16_t y, uint16_t w, const char* str, uint16_t color, int32_t bg) {
-    while (*str) {
-        if (x + 7 >= WIDTH) { // Move to next line if no more space
-            x = 0;
-            y += 10; // Move down by character height
-            if (y + 10 >= HEIGHT) break; // No more space for lines
-        }
-        drawChar(x, y, *str, color, bg);
-        x += 8; // 7 pixels + 1 pixel spacing
-        str++;
-    }
-}
+// void ST7789::drawParagraph(uint16_t x, uint16_t y, uint16_t w, const char* str, uint16_t color, FontSize size, uint16_t bg) {
+//     while (*str) {
+//         if (x + getFontWidth(size) >= WIDTH) { // Move to next line if no more space
+//             x = 0;
+//             y += getFontHeight(size); // Move down by character height
+//             if (y + getFontHeight(size) >= HEIGHT) break; // No more space for lines
+//         }
+//         drawChar(x, y, *str, color, size, bg);
+//         x += getFontWidth(size);
+//         str++;
+//     }
+// }

@@ -1,0 +1,7 @@
+const float PI       = 3.14159265358979323846f;
+const float E        = 2.71828182845904523536f;
+
+const float LN2      = 0.69314718055994530942f;
+const float INV_LN2  = 1.44269504088896340736f;
+const float LN10     = 2.30258509299404568402f;
+const float INV_LN10 = 0.43429448190325182765f;

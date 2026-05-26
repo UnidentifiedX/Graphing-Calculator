@@ -2,7 +2,7 @@
 
 [x] Constants: Are π and e recognized?
 
-[ ] Implicit Mult: Does 2x, x y, and 2sin(x) work?
+[x] Implicit Mult: Does 2x, x y, and 2sin(x) work?
 
 [x] Comma Support: Does min(x, y, z) work for multiple args?
 
@@ -17,3 +17,5 @@
 [ ] Nice error handling: Standardize error messages for syntax errors, undefined variables, and math errors.
 
 [ ] Implicit parantheses closing
+
+[ ] Flat AST and expression tree

@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Initialise pico_sdk from installed location
@@ -25,6 +26,8 @@ endif()
 # ====================================================================================
 set(PICO_BOARD pico2 CACHE STRING "Board type")
 
+set(PICO_CXX_ENABLE_RTTI 1)
+
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
@@ -35,21 +38,26 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(cpp main.cpp 
-    # core/parser.cpp
-    # core/parser.h
-    # core/expressions.h
-    # core/syntax_token.h
-    # core/syntax_kind.h
-    # core/evaluator.cpp
-    # core/evaluator.h
-    # core/constants.h
-    # core/functions.h
-    # core/functions.cpp
-
+add_executable(cpp main.cpp
+    core/syntax_token.h
+    core/syntax_kind.h
+    core/constants.h
+    core/functions.h
+    core/functions.cpp
     drivers/st7789/st7789.cpp
     drivers/st7789/st7789.h
     drivers/st7789/fonts.h
+    calculator/ui.cpp
+    calculator/ui.h
+    core/lexer.cpp
+    core/lexer.h
+    core/parser.h
+    core/parser.cpp
+    core/expressions.h
+    core/evaluator.h
+    core/evaluator.cpp
+    core/expressions.cpp
+    core/fixed_string_16.h
 )
 
 pico_set_program_name(cpp "cpp")
@@ -71,3 +79,4 @@ target_include_directories(cpp PRIVATE
 )
 
 pico_add_extra_outputs(cpp)
+pico_enable_stdio_usb(cpp 1)
