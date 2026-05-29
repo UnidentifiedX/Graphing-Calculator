@@ -22,7 +22,8 @@ SPECIAL_DISPLAY_FUNCTIONS = {
     FunctionNames.SQRT,
     FunctionNames.EXP,
     FunctionNames.POW,
-    FunctionNames.NROOT
+    FunctionNames.NROOT,
+    FunctionNames.FRAC
 }
 
 class NodeType(Enum):
@@ -68,27 +69,28 @@ class EndOfArgumentNode(Node):
 
 class TokenExpression:
     def __init__(self):
-        self.number_buffer = ""
         self.node_index: int = 0
         self.char_index: int = -1 # -1 if cursor is not referring to a number node
         self.node_buffer: list[Node | None] = [None] * 256
         self.size: int = 0 # number of nodes in the expression, not counting None nodes
 
-    def shift_cursor(self, direction):
+    def shift_cursor(self, direction) -> bool:
         """
         Direction: -1 for left, +1 for right
 
         This function doesn't care if the current char_index is valid or not; as long as the node_index is valid, it will shift the cursor in the intended direction and then fix the char_index accordingly based on the new node_index
+
+        Returns true if the cursor was successfully shifted
         """
         current_node = self.node_buffer[self.node_index]
         is_between_nodes = self._is_between_nodes()
 
         if direction == 1:
             if current_node is None: # at the end of the expression, can't move right
-                return
+                return False
             if is_between_nodes and self.node_index == len(self.node_buffer) - 1: # somehow reached the end of the buffer
                 print("Somehow reached the end of the buffer, can't move right")
-                return
+                return False
             if is_between_nodes and current_node.type != NodeType.NUMBER:
                 next_node = self.node_buffer[self.node_index + 1]
                 if next_node and next_node.type == NodeType.NUMBER:
@@ -99,14 +101,16 @@ class TokenExpression:
                     self.char_index = -1
             elif current_node.type == NodeType.NUMBER:
                 self.char_index += 1
-                if self.char_index >= len(current_node.num_str) - 1:
+                if self.char_index >= len(current_node.num_str):
                     self.char_index = -1
                     self.node_index += 1
             else:
-                raise ValueError(f"Invalid node type: {current_node.type}, current buffer state: {self.node_buffer[:self.size]}")
+                # this means the buffer is in an intermediate invalid state because of some shifting but we can move the cursor right
+                self.node_index += 1
+                self.char_index = -1
         elif direction == -1:
             if self.node_index == 0 and is_between_nodes: # at the beginning of the entire expression, can't move left
-                return
+                return False
             if is_between_nodes:
                 previous_node = self.node_buffer[self.node_index - 1]
                 if previous_node.type == NodeType.NUMBER:
@@ -114,14 +118,25 @@ class TokenExpression:
                     self.char_index = len(previous_node.num_str) - 1
                 else:
                     self.node_index -= 1
+                    self.char_index = -1
             elif current_node.type == NodeType.NUMBER:
                 self.char_index -= 1
-    
+                
+        return True
+
     def insert_node(self, node: Node):
-        if self.size >= len(self.node_buffer):
-            raise IndexError("Node buffer overflow")
-        
         current_node = self.node_buffer[self.node_index]
+
+        space_required = 1
+        if node.type == NodeType.NUMBER and (current_node and current_node.type == NodeType.NUMBER):
+            space_required = 0 # if both the new node and the current node are numbers, we can just merge them without needing to shift anything in the buffer, so no additional space is required
+        elif not self._is_between_nodes() and node.type != NodeType.NUMBER: # in a number and inserting a non-number node, need to split the number node into two and insert the new node in between
+            space_required = 2
+        elif node.type == NodeType.FUNCTION and node.identifier in SPECIAL_DISPLAY_FUNCTIONS:
+            space_required += FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["arity"] # function node + end of argument nodes
+
+        if self.size + space_required > len(self.node_buffer):
+            raise ValueError("Buffer overflow: cannot insert new node, not enough space in the buffer")
 
         if current_node is None:
             if node.type == NodeType.FUNCTION and node.identifier in SPECIAL_DISPLAY_FUNCTIONS:
@@ -138,6 +153,9 @@ class TokenExpression:
                         return
                 self.node_buffer[self.node_index] = node
                 self.size += 1
+
+                if node.type == NodeType.NUMBER:
+                    self.char_index = 0
             
             self.shift_cursor(1) # shift cursor to the right of the newly inserted node
             return
@@ -214,10 +232,13 @@ class TokenExpression:
                 current_node.num_str = current_node.num_str[1:] # delete the first character of the number
             elif current_node.type == NodeType.FUNCTION:
                 if current_node.identifier in SPECIAL_DISPLAY_FUNCTIONS:
+                    arity = FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[current_node.identifier.value]]["arity"]
                     original_node_index = self.node_index
                     depth_counter = 0
+                    eoa_delete_count = 0
                     i = self.node_index + 1
-                    while i < self.size:
+
+                    while i < self.size and eoa_delete_count < arity:
                         node = self.node_buffer[i]
                         if node.type == NodeType.FUNCTION and node.identifier in SPECIAL_DISPLAY_FUNCTIONS:
                             depth_counter += FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["arity"]
@@ -225,16 +246,52 @@ class TokenExpression:
                             if depth_counter == 0:
                                 self.node_index = i
                                 self._delete_node_atomically()
-                                continue
-                            # basically once everything is shifted we can't update the node index just continue from here
+                                eoa_delete_count += 1
+                                continue # basically once everything is shifted we can't update the node index just continue from here
                             depth_counter -= 1                                
                         i += 1
+
                     if depth_counter != 0:
                         raise ValueError("Invalid state: mismatched function and end of argument nodes")
+                    
                     self.node_index = original_node_index
                     self._delete_node_atomically()
                 else:
                     self._delete_node_atomically()
+            elif current_node.type == NodeType.ENDOFARGUMENT:
+                """
+                took inspirtaiton from the fx-97sgx where deleting the very last EOA instead deleted the character before it
+                but deleting any other EOA deletes the whole function, leaving the arguments there
+                but because im lazy and because it's going to take forever to figure out the logic for placing the cursor, the cursor will now just be returned to the
+                start of the function and the function will be deleted
+                """
+                parent_function_node_index = -1
+                is_last_argument = False
+                depth = 0
+                for i in range(self.node_index, -1, -1):
+                    node = self.node_buffer[i]
+                    
+                    if node.type == NodeType.ENDOFARGUMENT:
+                        depth += 1
+                    elif node.type == NodeType.FUNCTION and node.identifier in SPECIAL_DISPLAY_FUNCTIONS:
+                        arity = FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["arity"]
+                        depth -= arity
+
+                        if depth <= 0:
+                            parent_function_node_index = i
+                            
+                            if depth == 0:
+                                is_last_argument = True
+                            break
+                
+                if parent_function_node_index == -1:
+                    raise ValueError("Invalid state: end of argument node without corresponding function node")
+                
+                if is_last_argument:
+                    self.backspace_node()
+                else:
+                    self.node_index = parent_function_node_index
+                    self.delete_node()
             else:
                 self._delete_node_atomically()
         else:
@@ -244,8 +301,8 @@ class TokenExpression:
                 self.shift_cursor(1)
 
     def backspace_node(self):
-        self.shift_cursor(-1)
-        self.delete_node()
+        if self.shift_cursor(-1):
+            self.delete_node()
 
     def generate_token_list(self):
         token_list = []
@@ -260,7 +317,8 @@ class TokenExpression:
                 case NodeType.FUNCTION:
                     token_list.append(SyntaxToken(SyntaxKind.VARIABLE_TOKEN, FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["name"])) # variable token with function name as value (not enum because the parser is also built to handle user defined functions in the future)
                     token_list.append(SyntaxToken(SyntaxKind.OPEN_PAREN_TOKEN, None))
-                    arity_stack.append(FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["arity"])
+                    if node.identifier in SPECIAL_DISPLAY_FUNCTIONS:
+                        arity_stack.append(FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier.value]]["arity"])
                 case NodeType.ENDOFARGUMENT:
                     if not arity_stack:
                         raise ValueError("Invalid state: end of argument node without corresponding function node")
@@ -280,7 +338,10 @@ class TokenExpression:
         self.char_index = -1
         self.size = 0
 
-    def _is_between_nodes(self):
+    def _is_between_nodes(self): 
+        """
+        at the start of a number or at an atomic/function node
+        """
         return self.char_index == -1 or self.char_index == 0
     
     def _shift_tokens_right(self, index: int, places: int):
@@ -312,9 +373,12 @@ class TokenExpression:
 
     def _delete_node_atomically(self):
         self._shift_tokens_left(self.node_index + 1, 1)
+        self.node_buffer[self.size - 1] = None # if you delete the last node shift left does't clear it because it only shifts until the last node so this clears the last node if it is being deleted
         self.size -= 1
+
         new_current_node = self.node_buffer[self.node_index]
         previous_node = self.node_buffer[self.node_index - 1] if self.node_index > 0 else None
+
         if new_current_node and new_current_node.type == NodeType.NUMBER: # reset indexes
             if previous_node and previous_node.type == NodeType.NUMBER:
                 previous_node_length = len(previous_node.num_str)

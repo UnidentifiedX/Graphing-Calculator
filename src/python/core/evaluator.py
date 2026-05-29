@@ -8,6 +8,7 @@ from core.functions.functions import FUNCTION_INFO, BUILTIN_FUNCTION_STRING_MAP
 from core.operators.factorial import factorial
 
 from core.constants import PI, E
+import math
 
 POSTFIX_OPERATORS = {
     SyntaxKind.FACTORIAL_TOKEN: factorial,
@@ -83,10 +84,29 @@ class Evaluator:
         raise ValueError(f"Unsupported postfix operator: {node.operator.kind}")
 
     def visit_call(self, node: CallExpression):
-        if node.identifier in BUILTIN_FUNCTION_STRING_MAP:
-            function = FUNCTION_INFO[BUILTIN_FUNCTION_STRING_MAP[node.identifier]]["func"]
-            arguments = [arg.accept(self) for arg in node.arguments]
-            return function(*arguments)
+        arguments = [node.accept(self) for node in node.arguments]
+        # use inbuilt functions now
+        match node.identifier:
+            case "sin":
+                return math.sin(arguments[0])
+            case "cos":
+                return math.cos(arguments[0])
+            case "tan":
+                return math.tan(arguments[0])
+            case "pow":
+                return math.pow(arguments[0], arguments[1])
+            case "ln":
+                return math.log(arguments[0])
+            case "log":
+                return math.log(arguments[0], 10)
+            case "sqrt":
+                return math.sqrt(arguments[0])
+            case "nroot":
+                return math.pow(arguments[0], 1/arguments[1])
+            case "abs":
+                return abs(arguments[0])
+            case "frac":
+                return arguments[0] / arguments[1]
         
         raise ValueError(f"Undefined function: {node.identifier}")
 

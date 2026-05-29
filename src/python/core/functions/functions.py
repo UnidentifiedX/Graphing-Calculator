@@ -22,6 +22,7 @@ class FunctionType(Enum):
     SIN = auto()
     COS = auto()
     TAN = auto()
+    FRAC = auto()
 
 FUNCTION_INFO = {
     FunctionType.ABS: {"name": "abs", "arity": 1, "func": abs},
@@ -34,6 +35,7 @@ FUNCTION_INFO = {
     FunctionType.SIN: {"name": "sin", "arity": 1, "func": sin},
     FunctionType.COS: {"name": "cos", "arity": 1, "func": cos},
     FunctionType.TAN: {"name": "tan", "arity": 1, "func": tan},
+    FunctionType.FRAC: {"name": "frac", "arity": 2, "func": lambda x, y: x / y},
 }
 
 class FunctionNames(Enum):
@@ -47,6 +49,7 @@ class FunctionNames(Enum):
     SIN = "sin"
     COS = "cos"
     TAN = "tan"
+    FRAC = "frac"
 
 BUILTIN_FUNCTION_STRING_MAP = {
     FunctionNames.ABS.value: FunctionType.ABS,
@@ -59,4 +62,5 @@ BUILTIN_FUNCTION_STRING_MAP = {
     FunctionNames.SIN.value: FunctionType.SIN,
     FunctionNames.COS.value: FunctionType.COS,
     FunctionNames.TAN.value: FunctionType.TAN,
+    FunctionNames.FRAC.value: FunctionType.FRAC,
 }
