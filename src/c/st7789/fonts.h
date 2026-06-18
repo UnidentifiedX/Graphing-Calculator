@@ -1,18 +1,18 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 
 #define FONT_WIDTH_7x10 7
 #define FONT_HEIGHT_7x10 10
 #define FONT_WIDTH_11x18 11
 #define FONT_HEIGHT_11x18 18
 
-enum class FontSize {
+typedef enum {
     Font7x10,
     Font11x18
-};
+} FontSize;
 
 // https://int10h.org/oldschool-pc-fonts/fontlist/font?portfolio_6x8
-static const uint8_t Font6x8[96][8] = {
+const uint8_t Font6x8[96][8] = {
   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, // ' '
   { 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x80, 0x00 }, // '!'
   { 0xA0, 0xA0, 0xA0, 0x00, 0x00, 0x00, 0x00, 0x00 }, // '"'
