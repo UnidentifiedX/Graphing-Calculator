@@ -7,11 +7,13 @@
 #define MAX_TOKEN_EXPRESSION_BUFFER_SIZE 256
 #define MAX_NUMBER_STRING_LENGTH 128
 #define MAX_FUNCTION_IDENTIFIER_LENGTH 16
+#define MAX_VARIABLE_IDENTIFIER_LENGTH 16
 
 typedef enum {
     NODE_TYPE_EMPTY,
     NODE_TYPE_NUMBER,
     NODE_TYPE_ATOM,
+    NODE_TYPE_VARIABLE, // behaves just like an atom
     NODE_TYPE_FUNCTION,
     NODE_TYPE_END_OF_ARGUMENT
 } NodeType;
@@ -22,6 +24,7 @@ typedef struct {
         char num_str[MAX_NUMBER_STRING_LENGTH];
         SyntaxToken token;
         char func_identifier[MAX_FUNCTION_IDENTIFIER_LENGTH];
+        char var_identifier[MAX_VARIABLE_IDENTIFIER_LENGTH];
     } node;
 } Node;
 

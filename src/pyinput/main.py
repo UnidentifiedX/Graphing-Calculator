@@ -24,6 +24,20 @@ def press(x):
             ser.write(b'B')
         case "CLEAR":
             ser.write(b'C')
+        case "UP":
+            ser.write(b'U')
+        case "DOWN":
+            ser.write(b'D')
+        case "sin":
+            ser.write(b's')
+        case "cos":
+            ser.write(b'c')
+        case "tan":
+            ser.write(b't')
+        case "log":
+            ser.write(b'g')
+        case "pi":
+            ser.write(b'p')
 
 label = tk.Entry(root, textvariable=expression, font=("Arial", 24))
 label.grid(row=0, column=0, columnspan=4)

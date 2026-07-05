@@ -3,7 +3,8 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
-#include "inbuilt_function.h"
+#include "inbuilt_functions.h"
+#include "inbuilt_constants.h"
 
 double call_inbuilt_function(InbuiltFunction func, double* args, size_t argc) {
     switch (func) {
@@ -35,13 +36,6 @@ double call_inbuilt_function(InbuiltFunction func, double* args, size_t argc) {
     }
 }
 
-static double get_constant(const char* name) {
-    if (strcmp(name, "pi") == 0) return M_PI;
-    if (strcmp(name, "e") == 0) return M_E;
-
-    return NAN;
-}
-
 double evaluate(const Expression* expressions, size_t index) {
     const Expression* expression = &expressions[index];
 
@@ -49,7 +43,8 @@ double evaluate(const Expression* expressions, size_t index) {
         case EXPRESSION_TYPE_NUMBER:
             return expression->value.number;
         case EXPRESSION_TYPE_VARIABLE: {
-            double constant_value = get_constant(expression->value.variable);
+            InbuiltConstant constant = get_constant_from_name(expression->value.variable);
+            double constant_value = get_constant(constant);
             if (!isnan(constant_value)) {
                 return constant_value;
             } else {

@@ -1,5 +1,5 @@
 #include "token_expression.h"
-#include "core/inbuilt_function.h"
+#include "core/inbuilt_functions.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -185,6 +185,7 @@ void insert_node(TokenExpression* expr, Node* node) {
             }
             break;
         }
+        case NODE_TYPE_VARIABLE:
         case NODE_TYPE_ATOM: {
             if (between_nodes) {
                 insert_node_atomically(expr, node);
@@ -374,12 +375,21 @@ size_t to_tokens(TokenExpression* expr, SyntaxToken* tokens, size_t max_tokens) 
                 tokens[token_count++] = (SyntaxToken){ .kind = SYNTAX_KIND_NUMBER, .value.number = strtod(node->node.num_str, NULL) };
                 break;
             }
+            case NODE_TYPE_VARIABLE: {
+                tokens[token_count++] = (SyntaxToken){ .kind = SYNTAX_KIND_VARIABLE };
+                snprintf(tokens[token_count - 1].value.identifier, sizeof(tokens[token_count - 1].value.identifier), "%s", node->node.var_identifier);
+                break;
+            }
             case NODE_TYPE_ATOM: {
                 tokens[token_count++] = node->node.token;
                 break;
             }
             case NODE_TYPE_FUNCTION: {
-                tokens[token_count++] = (SyntaxToken){ .kind = SYNTAX_KIND_VARIABLE, .value.identifier = *node->node.func_identifier };
+                printf("Inserting function: %s\n", node->node.func_identifier);
+
+                SyntaxToken function_token = { .kind = SYNTAX_KIND_VARIABLE };
+                snprintf(function_token.value.identifier, sizeof(function_token.value.identifier), "%s", node->node.func_identifier);
+                tokens[token_count++] = function_token;
                 tokens[token_count++] = (SyntaxToken){ .kind = SYNTAX_KIND_OPEN_PARENTHESIS };
 
                 if (is_special_display_function(node->node.func_identifier)) {
@@ -551,6 +561,9 @@ void output_token_expression(const TokenExpression* expr) {
                 break;
             case NODE_TYPE_ATOM:
                 printf("Atom: %d\n", node->node.token.kind);
+                break;
+            case NODE_TYPE_VARIABLE:
+                printf("Variable: %s\n", node->node.var_identifier);
                 break;
             case NODE_TYPE_FUNCTION:
                 printf("Function: %s\n", node->node.func_identifier);

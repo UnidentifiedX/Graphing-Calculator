@@ -6,6 +6,13 @@
 #include <stdbool.h>
 #include "cursor.h"
 
+typedef struct {
+    uint16_t w;
+    uint16_t h;
+} ExpressionDimensions;
+
+ExpressionDimensions calculate_dimensions(TokenExpression* expr, uint16_t font_scale);
+
 /// @brief draws the expression. if duraw cursor is true it only updates its position. you need to activate it yourself
 /// @param display 
 /// @param expr 
@@ -20,7 +27,7 @@ void draw_expression(ST7789* display,
     TokenExpression* expr, 
     uint16_t x, 
     uint16_t y,
-    uint16_t h,
+    ExpressionDimensions dimensions,
     uint16_t font_scale, 
     uint16_t font_color, 
     uint16_t bg_color, 

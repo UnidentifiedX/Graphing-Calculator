@@ -25,6 +25,12 @@ Keystroke char_to_keystroke(char c) {
         case 'B': return KEYSTROKE_BACKSPACE;
         case 'L': return KEYSTROKE_LEFT;
         case 'R': return KEYSTROKE_RIGHT;
+        case 's': return KEYSTROKE_SIN;
+        case 'c': return KEYSTROKE_COS;
+        case 't': return KEYSTROKE_TAN;
+        case 'l': return KEYSTROKE_LN;
+        case 'g': return KEYSTROKE_LOG10;
+        case 'p': return KEYSTROKE_PI;
         default:  return KEYSTROKE_INVALID; // Invalid keystroke
     }
 }

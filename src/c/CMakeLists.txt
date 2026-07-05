@@ -50,8 +50,8 @@ add_executable(c main.c
         core/evaluator.c
         calculator/evaluator/token_expression.c
         calculator/evaluator/token_expression.h
-        core/inbuilt_function.c
-        core/inbuilt_function.h
+        core/inbuilt_functions.c
+        core/inbuilt_functions.h
         calculator/pages/pages.c
         calculator/pages/pages.h
         calculator/pages/calculator_page.c
@@ -59,10 +59,12 @@ add_executable(c main.c
         calculator/keystrokes.h
         calculator/ui/cursor.c
         calculator/ui/cursor.h
-        calculator/ui/draw_expression.c
-        calculator/ui/draw_expression.h
+        calculator/ui/expression_drawer.c
+        calculator/ui/expression_drawer.h
         virtual_keypad/virtual_keypad.h
-        virtual_keypad/virtual_keypad.c)
+        virtual_keypad/virtual_keypad.c
+        core/inbuilt_constants.h
+        core/inbuilt_constants.c)
 
 pico_set_program_name(c "c")
 pico_set_program_version(c "0.1")

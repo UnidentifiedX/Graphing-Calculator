@@ -6,7 +6,8 @@
 #include "core/parser.h"
 #include "core/evaluator.h"
 #include <stdio.h>
-#include "calculator/ui/draw_expression.h"
+#include "calculator/ui/expression_drawer.h"
+#include "core/inbuilt_functions.h"
 
 #define CALCULATOR_PAGE_MAX_HISTORY_SIZE 4
 
@@ -21,13 +22,14 @@ static const uint16_t CALCULATOR_PAGE_EXPRESSION_FONT_SCALE = 2;
 #define CALCULATOR_PAGE_EXPRESSION_BG_COLOR color565(255, 255, 255)
 
 static const uint16_t EXPRESSION_RESULT_MARGIN = 2; // leave some margin between expression and result
-static const uint16_t SEPARATOR_LINE_MARGIN = 8; // leave some margin between the separator line and expressions
+static const uint16_t SEPARATOR_LINE_MARGIN = 4; // leave some margin between the separator line and expressions
 static const uint16_t SEPARATOR_LINE_THICKNESS = 1; // thickness of the separator line
 
 typedef struct {
     TokenExpression expression;
     TokenExpression result;
-    size_t height; // height of the rendered expression + result + margin between them in pixels
+    ExpressionDimensions expression_dimensions;
+    ExpressionDimensions result_dimensions;
 } ExpressionResult;
 
 typedef struct {
@@ -103,33 +105,24 @@ static void clear_history() {
 /// @param alignment 
 /// @param draw_cursor 
 /// @return 
-static size_t render_expression(ST7789* display, TokenExpression* expr, size_t y_offset, Alignment alignment, bool draw_cursor) {
-    size_t height = FONT_HEIGHT_6x8 * CALCULATOR_PAGE_EXPRESSION_FONT_SCALE; // keep track of current expression height
+static void render_expression(ST7789* display, TokenExpression* expr, ExpressionDimensions dimensions, uint16_t y_offset, Alignment alignment, bool draw_cursor) {
+    uint16_t x = CALCULATOR_PAGE_LEFT_MARGIN;
 
-    // for (size_t i = 0; i < calculator_page_data.current_expression.size; i++) {
-    //     Node* node = &calculator_page_data.current_expression.node_buffer[i];
-        
-    //     // numbers, operators and inline functions only add height if current height is 0
-    //     if ((node->type == NODE_TYPE_NUMBER || 
-    //         node->type == NODE_TYPE_ATOM ||
-    //         (node->type == NODE_TYPE_FUNCTION && !is_special_display_function(node->node.func_identifier))) && height == 0) {
-    //             height = FONT_HEIGHT_6x8 * CALCULATOR_PAGE_EXPRESSION_FONT_SCALE;
-    //     }
-    // }
-
+    if (alignment == ALIGN_RIGHT) {
+        x = ST7789_WIDTH - CALCULATOR_PAGE_RIGHT_MARGIN - dimensions.w;
+    }
+    
     draw_expression(display, 
         expr,
-        CALCULATOR_PAGE_LEFT_MARGIN,
-        ST7789_HEIGHT - height - y_offset,
-        height,
+        x,
+        ST7789_HEIGHT - dimensions.h - y_offset,
+        dimensions,
         CALCULATOR_PAGE_EXPRESSION_FONT_SCALE,
         CALCULATOR_PAGE_EXPRESSION_FONT_COLOR,
         CALCULATOR_PAGE_EXPRESSION_BG_COLOR,
         draw_cursor,
         &calculator_page_data.cursor
     );
-
-    return height;
 }
 
 /*
@@ -142,7 +135,10 @@ static void render_expressions(ST7789* display) {
     disable_cursor(&calculator_page_data.cursor);
 
     // render the current expression at the bottom of the screen
-    size_t height = render_expression(display, &calculator_page_data.current_expression, CALCULATOR_PAGE_BOTTOM_MARGIN, ALIGN_LEFT, true);
+    ExpressionDimensions current_dimensions = calculate_dimensions(&calculator_page_data.current_expression, CALCULATOR_PAGE_EXPRESSION_FONT_SCALE);
+    uint16_t height = current_dimensions.h;
+    render_expression(display, &calculator_page_data.current_expression, current_dimensions, CALCULATOR_PAGE_BOTTOM_MARGIN, ALIGN_LEFT, true);
+    height += 8 - SEPARATOR_LINE_MARGIN; // some space for the cursor
 
     // render history from the bottom of the screen to the top
     /// TODO: fix rendering too many history expressions that don't fit on the screen
@@ -163,11 +159,15 @@ static void render_expressions(ST7789* display) {
         size_t index = (calculator_page_data.history_latest + CALCULATOR_PAGE_MAX_HISTORY_SIZE - i) % CALCULATOR_PAGE_MAX_HISTORY_SIZE;
         ExpressionResult* result = &calculator_page_data.history[index];
         height += SEPARATOR_LINE_MARGIN;
-        height += render_expression(display, &result->result, height, ALIGN_LEFT, false);
+        ExpressionDimensions result_dimensions = result->result_dimensions;
+        render_expression(display, &result->result, result_dimensions, height, ALIGN_RIGHT, false);
+        height += result_dimensions.h;
 
         // then expression
         height += EXPRESSION_RESULT_MARGIN;
-        height += render_expression(display, &result->expression, height, ALIGN_LEFT, false);
+        ExpressionDimensions expression_dimensions = result->expression_dimensions;
+        render_expression(display, &result->expression, expression_dimensions, height, ALIGN_LEFT, false);
+        height += expression_dimensions.h;
     }
 
     // restore the cursor state
@@ -180,28 +180,34 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
     TokenExpression* expr = &calculator_page_data.current_expression;
 
     switch (key) {
-        case KEYSTROKE_0: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "0" }); break;
-        case KEYSTROKE_1: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "1" }); break;
-        case KEYSTROKE_2: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "2" }); break;
-        case KEYSTROKE_3: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "3" }); break;
-        case KEYSTROKE_4: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "4" }); break;
-        case KEYSTROKE_5: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "5" }); break;
-        case KEYSTROKE_6: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "6" }); break;
-        case KEYSTROKE_7: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "7" }); break;
-        case KEYSTROKE_8: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "8" }); break;
-        case KEYSTROKE_9: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "9" }); break;
-        case KEYSTROKE_DECIMAL_POINT: insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "." }); break;
+        case KEYSTROKE_0:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "0" }); break;
+        case KEYSTROKE_1:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "1" }); break;
+        case KEYSTROKE_2:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "2" }); break;
+        case KEYSTROKE_3:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "3" }); break;
+        case KEYSTROKE_4:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "4" }); break;
+        case KEYSTROKE_5:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "5" }); break;
+        case KEYSTROKE_6:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "6" }); break;
+        case KEYSTROKE_7:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "7" }); break;
+        case KEYSTROKE_8:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "8" }); break;
+        case KEYSTROKE_9:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "9" }); break;
+        case KEYSTROKE_DECIMAL_POINT:     insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "." }); break;
         case KEYSTROKE_OPEN_PARENTHESIS:  insert_node(expr, &(Node){ .type = NODE_TYPE_ATOM, .node.token = (SyntaxToken){ .kind = SYNTAX_KIND_OPEN_PARENTHESIS } }); break;
         case KEYSTROKE_CLOSE_PARENTHESIS: insert_node(expr, &(Node){ .type = NODE_TYPE_ATOM, .node.token = (SyntaxToken){ .kind = SYNTAX_KIND_CLOSE_PARENTHESIS } }); break;
         case KEYSTROKE_PLUS:              insert_node(expr, &(Node){ .type = NODE_TYPE_ATOM, .node.token = (SyntaxToken){ .kind = SYNTAX_KIND_PLUS } }); break;
         case KEYSTROKE_MINUS:             insert_node(expr, &(Node){ .type = NODE_TYPE_ATOM, .node.token = (SyntaxToken){ .kind = SYNTAX_KIND_MINUS } }); break;
         case KEYSTROKE_MULTIPLY:          insert_node(expr, &(Node){ .type = NODE_TYPE_ATOM, .node.token = (SyntaxToken){ .kind = SYNTAX_KIND_MULTIPLY } }); break;
         case KEYSTROKE_DIVIDE:            insert_node(expr, &(Node){ .type = NODE_TYPE_ATOM, .node.token = (SyntaxToken){ .kind = SYNTAX_KIND_DIVIDE } }); break;
+        case KEYSTROKE_SIN:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "sin" }); break;
+        case KEYSTROKE_COS:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "cos" }); break;
+        case KEYSTROKE_TAN:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "tan" }); break;
+        case KEYSTROKE_LN:                insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "ln" }); break;
+        case KEYSTROKE_LOG10:             insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "log" }); break;
+        case KEYSTROKE_PI:                insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "pi" }); break;
         case KEYSTROKE_ENTER: {
             Expression expressions[256];
             SyntaxToken tokens[256];
             size_t token_count = to_tokens(expr, tokens, 256);
-            // output_token_expression(expr);
+
             Parser parser;
             init_parser(&parser, tokens, token_count);
             size_t root_index = parse(&parser, expressions, 256);
@@ -213,7 +219,7 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
             Node result_node = {
                 .type = NODE_TYPE_NUMBER
             };
-            sprintf(result_node.node.num_str, "%g", result);
+            snprintf(result_node.node.num_str, sizeof(result_node.node.num_str), "%g", result);
             insert_node(&result_expr, &result_node);
 
             // circular buffer for history. [0] is the oldest, [history_size - 1] is the most recent. if overflow, we overwrite starting from [0]
@@ -222,10 +228,8 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
             calculator_page_data.history[index] = (ExpressionResult){
                 .expression = *expr,
                 .result = result_expr,
-                .height =
-                    FONT_HEIGHT_6x8 * CALCULATOR_PAGE_EXPRESSION_FONT_SCALE +
-                    EXPRESSION_RESULT_MARGIN +
-                    FONT_HEIGHT_6x8 * CALCULATOR_PAGE_EXPRESSION_FONT_SCALE
+                .expression_dimensions = calculate_dimensions(expr, CALCULATOR_PAGE_EXPRESSION_FONT_SCALE),
+                .result_dimensions = calculate_dimensions(&result_expr, CALCULATOR_PAGE_EXPRESSION_FONT_SCALE)
             };
 
             calculator_page_data.history_latest = index;
@@ -251,9 +255,9 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         default: break;
     }
 
-    // printf("Current expression: ");
-    // output_token_expression(expr);
-    // printf("Current cursors: node_index = %zu, char_index = %zu\n", expr->node_index, expr->char_index);
-    // printf("\n");
+    printf("Current expression: ");
+    output_token_expression(expr);
+    printf("Current cursors: node_index = %zu, char_index = %zu\n", expr->node_index, expr->char_index);
+    printf("\n");
     render_expressions(&manager->display);
 }

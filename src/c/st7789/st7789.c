@@ -207,12 +207,12 @@ void st7789_draw_vertical_line(ST7789 *display, uint16_t x, uint16_t y, uint16_t
 }
 
 void st7789_draw_char(ST7789 *display, uint16_t x, uint16_t y, char c, uint16_t color, uint8_t scale, uint16_t bg) {
-    if (c < 32 || c > 127) return; // Unsupported character
+    // if (c < 32 || c > 127) return; // Unsupported character
 
     const uint8_t (*char_map)[8] = Font6x8;
 
     for (uint8_t row = 0; row < FONT_HEIGHT_6x8; row++) {
-        uint8_t rowData = char_map[c - 32][row];
+        uint8_t rowData = char_map[c][row];
 
         for (uint8_t col = 0; col < FONT_WIDTH_6x8; col++) {
             // 8-bit bitmask (MSB → LSB)
