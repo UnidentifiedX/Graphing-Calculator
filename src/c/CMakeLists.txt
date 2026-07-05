@@ -47,7 +47,22 @@ add_executable(c main.c
         core/parser.c
         core/expression.h
         core/evaluator.h
-        core/evaluator.c)
+        core/evaluator.c
+        calculator/evaluator/token_expression.c
+        calculator/evaluator/token_expression.h
+        core/inbuilt_function.c
+        core/inbuilt_function.h
+        calculator/pages/pages.c
+        calculator/pages/pages.h
+        calculator/pages/calculator_page.c
+        calculator/pages/calculator_page.h
+        calculator/keystrokes.h
+        calculator/ui/cursor.c
+        calculator/ui/cursor.h
+        calculator/ui/draw_expression.c
+        calculator/ui/draw_expression.h
+        virtual_keypad/virtual_keypad.h
+        virtual_keypad/virtual_keypad.c)
 
 pico_set_program_name(c "c")
 pico_set_program_version(c "0.1")

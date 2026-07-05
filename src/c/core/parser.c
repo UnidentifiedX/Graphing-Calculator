@@ -49,9 +49,15 @@ static bool IMPLICIT_RIGHT_TOKENS[SYNTAX_KIND_COUNT] = {
     [SYNTAX_KIND_OPEN_PARENTHESIS] = true
 };
 
+void init_parser(Parser* parser, SyntaxToken* tokens, size_t token_count) {
+    parser->tokens = tokens;
+    parser->token_count = token_count;
+    parser->position = 0;
+}
+
 static SyntaxToken* peek(Parser* parser) {
-    if (parser->_position < parser->_token_count) {
-        return &parser->_tokens[parser->_position];
+    if (parser->position < parser->token_count) {
+        return &parser->tokens[parser->position];
     } 
 
     static SyntaxToken eof_token = { .kind = SYNTAX_KIND_EOF };
@@ -61,19 +67,19 @@ static SyntaxToken* peek(Parser* parser) {
 static SyntaxToken* consume(Parser* parser) {
     SyntaxToken* token = peek(parser);
     if (token->kind != SYNTAX_KIND_EOF) {
-        parser->_position++;
+        parser->position++;
     }
     return token;
 }
 
 static size_t alloc_node(Parser* parser) {
-    return parser->_expression_count++;
+    return parser->expression_count++;
 }
 
 size_t parse(Parser* parser, Expression* out, size_t max_expressions) {
-    parser->_expressions = out;
-    parser->_expression_count = 0;
-    parser->_max_expressions = max_expressions;
+    parser->expressions = out;
+    parser->expression_count = 0;
+    parser->max_expressions = max_expressions;
 
     size_t root = parse_expression(parser, out, 0);
 
@@ -89,15 +95,15 @@ size_t parse_expression(Parser* parser, Expression* out, uint8_t rbp) {
     size_t left = nud(parser, out, token);
 
     while (1) {
-        SyntaxToken* token = peek(parser);
+        token = peek(parser);
         if (token->kind == SYNTAX_KIND_EOF) break;
 
         // check for implicit multiplication by checking if the previous token allows it
         // and the next token is one that can be implicitly multiplied
         // honestly if you just check for implicit tokens on the right it should be ok
         // but this way we can avoid some edge cases (i will think about this more later)
-        bool is_implicit = parser->_position > 0 &&
-            IMPLICIT_LEFT_TOKENS[parser->_tokens[parser->_position - 1].kind] &&
+        bool is_implicit = parser->position > 0 &&
+            IMPLICIT_LEFT_TOKENS[parser->tokens[parser->position - 1].kind] &&
             IMPLICIT_RIGHT_TOKENS[token->kind];
 
         if (is_implicit) {
@@ -144,8 +150,6 @@ size_t led(Parser* parser, Expression* out, size_t left, SyntaxToken* token) {
 }
 
 size_t nud(Parser* parser, Expression* out, SyntaxToken* token) {
-    // size_t node = alloc_node(parser);
-
     switch (token->kind) {
         case SYNTAX_KIND_NUMBER: {
             size_t node = alloc_node(parser);

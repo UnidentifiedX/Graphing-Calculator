@@ -3,19 +3,26 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <string.h>
+
+void init_lexer(Lexer* lexer, const char* input_string) {
+    lexer->input_string = input_string;
+    lexer->input_length = strlen(input_string);
+    lexer->position = 0;
+}
 
 static const char peek(Lexer* lexer) {
-    if (lexer->_position < lexer->_input_length) {
-        return lexer->_input_string[lexer->_position];
+    if (lexer->position < lexer->input_length) {
+        return lexer->input_string[lexer->position];
     }
 
     return '\0';
 }
 
 static char next(Lexer* lexer) {
-    if (lexer->_position < lexer->_input_length) {
-        char c = lexer->_input_string[lexer->_position];
-        lexer->_position++;
+    if (lexer->position < lexer->input_length) {
+        char c = lexer->input_string[lexer->position];
+        lexer->position++;
         return c;
     }
 
@@ -28,7 +35,7 @@ static double parse_number(Lexer* lexer) {
     bool has_digits = false;
     bool has_decimal_point = false;
 
-    while (lexer->_position < lexer->_input_length) {
+    while (lexer->position < lexer->input_length) {
         char c = peek(lexer);
 
         if (isdigit(c)) {
@@ -49,7 +56,7 @@ static double parse_number(Lexer* lexer) {
     }
 
     if (!has_digits) {
-        fprintf(stderr, "Error: Expected a number at position %zu\n", lexer->_position);
+        fprintf(stderr, "Error: Expected a number at position %zu\n", lexer->position);
         return 0.0;
     }
 
@@ -59,7 +66,7 @@ static double parse_number(Lexer* lexer) {
 static void parse_identifier(Lexer* lexer, char* buffer, size_t buffer_size) {
     size_t length = 0;
 
-    while (lexer->_position < lexer->_input_length && (isalnum(peek(lexer)) || peek(lexer) == '_')) {
+    while (lexer->position < lexer->input_length && (isalnum(peek(lexer)) || peek(lexer) == '_')) {
         if (length < buffer_size - 1) { // Leave space for null terminator
             buffer[length++] = next(lexer);
         } else {
@@ -74,7 +81,7 @@ static void parse_identifier(Lexer* lexer, char* buffer, size_t buffer_size) {
 size_t tokenize(Lexer* lexer, SyntaxToken* tokens, size_t max_tokens) {
     size_t token_index = 0;
 
-    while (lexer->_position < lexer->_input_length && token_index < max_tokens) {
+    while (lexer->position < lexer->input_length && token_index < max_tokens) {
         char c = peek(lexer);
 
         if (isspace(c)) {
@@ -129,7 +136,7 @@ size_t tokenize(Lexer* lexer, SyntaxToken* tokens, size_t max_tokens) {
                     next(lexer);
                     break;
                 default:
-                    fprintf(stderr, "Error: Unrecognized character '%c' at position %zu\n", c, lexer->_position);
+                    fprintf(stderr, "Error: Unrecognized character '%c' at position %zu\n", c, lexer->position);
                     next(lexer); // Skip the unrecognized character
             }
         }

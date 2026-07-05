@@ -3,33 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
-
-typedef enum {
-    INBUILT_FUNCTION_INVALID = -1,
-    INBUILT_FUNCTION_SIN,
-    INBUILT_FUNCTION_COS,
-    INBUILT_FUNCTION_TAN,
-    INBUILT_FUNCTION_LN,
-    INBUILT_FUNCTION_LOG,
-    INBUILT_FUNCTION_SQRT,
-    INBUILT_FUNCTION_POW,
-    INBUILT_FUNCTION_ABS,
-    INBUILT_FUNCTION_NROOT
-} InbuiltFunction;
-
-static InbuiltFunction get_inbuilt_function(const char* name) {
-    if (strcmp(name, "sin") == 0) return INBUILT_FUNCTION_SIN;
-    if (strcmp(name, "cos") == 0) return INBUILT_FUNCTION_COS;
-    if (strcmp(name, "tan") == 0) return INBUILT_FUNCTION_TAN;
-    if (strcmp(name, "ln") == 0) return INBUILT_FUNCTION_LN;
-    if (strcmp(name, "log") == 0) return INBUILT_FUNCTION_LOG;
-    if (strcmp(name, "sqrt") == 0) return INBUILT_FUNCTION_SQRT;
-    if (strcmp(name, "pow") == 0) return INBUILT_FUNCTION_POW;
-    if (strcmp(name, "abs") == 0) return INBUILT_FUNCTION_ABS;
-    if (strcmp(name, "nroot") == 0) return INBUILT_FUNCTION_NROOT;
-
-    return -1; // Invalid function
-}
+#include "inbuilt_function.h"
 
 double call_inbuilt_function(InbuiltFunction func, double* args, size_t argc) {
     switch (func) {
@@ -146,7 +120,7 @@ double evaluate(const Expression* expressions, size_t index) {
         }
         case EXPRESSION_TYPE_CALL: {
             char* identifier = expression->value.call.identifier;
-            InbuiltFunction func = get_inbuilt_function(identifier);
+            InbuiltFunction func = get_inbuilt_function_from_enum(identifier);
 
             if (func == INBUILT_FUNCTION_INVALID) {
                 fprintf(stderr, "Error: Undefined function '%s'\n", identifier);

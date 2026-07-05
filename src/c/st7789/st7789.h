@@ -5,6 +5,9 @@
 #define ST7789_WIDTH 320
 #define ST7789_HEIGHT 240
 
+static const uint8_t FONT_WIDTH_6x8  = 6;
+static const uint8_t FONT_HEIGHT_6x8 = 8;
+
 typedef enum {
     LINE_STYLE_SOLID,
     LINE_STYLE_DASHED,
@@ -26,6 +29,7 @@ void st7789_draw_pixel(ST7789 *display, uint16_t x, uint16_t y, uint16_t color);
 void st7789_fill_rect(ST7789 *display, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void st7789_fill_screen(ST7789 *display, uint16_t color);
 void st7789_draw_horizontal_line(ST7789 *display, uint16_t x, uint16_t y, uint16_t w, uint16_t t, uint16_t color, LineStyle style, uint16_t bg);
+void st7789_draw_vertical_line(ST7789 *display, uint16_t x, uint16_t y, uint16_t h, uint16_t t, uint16_t color, LineStyle style, uint16_t bg);
 void st7789_draw_char(ST7789 *display, uint16_t x, uint16_t y, char c, uint16_t color, uint8_t scale, uint16_t bg);
 void st7789_draw_string(ST7789 *display, uint16_t x, uint16_t y, const char* str, uint16_t color, uint8_t scale, uint16_t bg);
 void st7789_set_brightness(ST7789 *display, uint8_t brightness);

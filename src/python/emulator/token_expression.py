@@ -107,7 +107,7 @@ class TokenExpression:
             else:
                 # this means the buffer is in an intermediate invalid state because of some shifting but we can move the cursor right
                 self.node_index += 1
-                self.char_index = -1
+                self.char_index = -1 if self.node_buffer[self.node_index] is None or self.node_buffer[self.node_index].type != NodeType.NUMBER else 0
         elif direction == -1:
             if self.node_index == 0 and is_between_nodes: # at the beginning of the entire expression, can't move left
                 return False

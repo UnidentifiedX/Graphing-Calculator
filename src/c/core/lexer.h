@@ -4,10 +4,12 @@
 #include "syntax_token.h"
 
 typedef struct {
-    const char* _input_string;
-    size_t _input_length;
-    size_t _position;
+    const char* input_string;
+    size_t input_length;
+    size_t position;
 } Lexer;
+
+void init_lexer(Lexer* lexer, const char* input_string);
 
 /// @brief Fill an array of SyntaxToken with tokens from the input string in the Lexer.
 /// @param lexer 

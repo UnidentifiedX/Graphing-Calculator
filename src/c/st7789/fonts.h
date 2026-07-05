@@ -1,11 +1,6 @@
 #pragma once
 #include <stdint.h>
 
-#define FONT_WIDTH_7x10 7
-#define FONT_HEIGHT_7x10 10
-#define FONT_WIDTH_11x18 11
-#define FONT_HEIGHT_11x18 18
-
 typedef enum {
     Font7x10,
     Font11x18

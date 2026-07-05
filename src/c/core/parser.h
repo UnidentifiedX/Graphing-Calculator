@@ -6,14 +6,16 @@
 #include <stdint.h>
 
 typedef struct {
-    SyntaxToken* _tokens;
-    size_t _token_count;
-    size_t _position;
+    SyntaxToken* tokens;
+    size_t token_count;
+    size_t position;
 
-    Expression* _expressions;
-    size_t _expression_count;
-    size_t _max_expressions;
+    Expression* expressions;
+    size_t expression_count;
+    size_t max_expressions;
 } Parser;
+
+void init_parser(Parser* parser, SyntaxToken* tokens, size_t token_count);
 
 /// @brief Parses a sequence of SyntaxToken into an array of Expression. First expression is the root expression
 /// @param parser 

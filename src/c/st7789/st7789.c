@@ -19,9 +19,6 @@ static const uint8_t ST7789_CMD_RAMWR   = 0x2C; // Memory write
 static const uint8_t ST7789_CMD_MADCTL  = 0x36; // Memory data access control
 static const uint8_t ST7789_CMD_COLMOD  = 0x3A; // Interface pixel format
 
-static const uint8_t FONT_WIDTH_6x8  = 6;
-static const uint8_t FONT_HEIGHT_6x8 = 8;
-
 static void st7789_pin_low(uint8_t pin) {
     gpio_put(pin, 0);
 }
@@ -166,6 +163,35 @@ void st7789_draw_horizontal_line(ST7789 *display, uint16_t x, uint16_t y, uint16
                 (style == LINE_STYLE_SOLID) ||
                 (style == LINE_STYLE_DASHED && (j / 8) % 2 == 0) ||
                 (style == LINE_STYLE_DOTTED && j % 2 == 0);
+
+            uint16_t c = draw ? color : bg;
+
+            uint8_t high = c >> 8;
+            uint8_t low = c & 0xFF;
+
+            spi_write_blocking(ST7789_SPI_PORT, &high, 1);
+            spi_write_blocking(ST7789_SPI_PORT, &low, 1);
+        }
+    }
+
+    st7789_pin_high(display->_cs);
+}
+
+void st7789_draw_vertical_line(ST7789 *display, uint16_t x, uint16_t y, uint16_t h, uint16_t t, uint16_t color, LineStyle style, uint16_t bg) {
+    if (x >= ST7789_WIDTH || y >= ST7789_HEIGHT) return;
+    if (x + t > ST7789_WIDTH) t = ST7789_WIDTH - x;
+    if (y + h > ST7789_HEIGHT) h = ST7789_HEIGHT - y;
+
+    st7789_set_window(display, x, y, x + t - 1, y + h - 1);
+    st7789_pin_high(display->_dc); // Data mode
+    st7789_pin_low(display->_cs);
+
+    for (size_t i = 0; i < h; i++) {
+        for (size_t j = 0; j < t; j++) {
+            bool draw =
+                (style == LINE_STYLE_SOLID) ||
+                (style == LINE_STYLE_DASHED && (i / 8) % 2 == 0) ||
+                (style == LINE_STYLE_DOTTED && i % 2 == 0);
 
             uint16_t c = draw ? color : bg;
 
