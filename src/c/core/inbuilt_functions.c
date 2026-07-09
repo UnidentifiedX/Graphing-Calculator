@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <string.h>
 
-InbuiltFunction get_inbuilt_function_from_enum(const char* name) {
+InbuiltFunction get_inbuilt_function_from_identifier(const char* name) {
     if (strcmp(name, "sin") == 0)   return INBUILT_FUNCTION_SIN;
     if (strcmp(name, "cos") == 0)   return INBUILT_FUNCTION_COS;
     if (strcmp(name, "tan") == 0)   return INBUILT_FUNCTION_TAN;

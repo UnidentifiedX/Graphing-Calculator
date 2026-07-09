@@ -3,7 +3,7 @@
 #include "syntax_token.h"
 #include <stddef.h>
 
-#define MAX_ARGUMENTS 10
+#define MAX_ARGUMENTS 8
 
 typedef enum {
     EXPRESSION_TYPE_NUMBER,

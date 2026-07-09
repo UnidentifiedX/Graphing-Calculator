@@ -38,6 +38,8 @@ def press(x):
             ser.write(b'g')
         case "pi":
             ser.write(b'p')
+        case "sqrt":
+            ser.write(b'q')
 
 label = tk.Entry(root, textvariable=expression, font=("Arial", 24))
 label.grid(row=0, column=0, columnspan=4)

@@ -7,7 +7,7 @@ static const uint8_t ST7789_PIN_MOSI  = 3;
 
 static const uint8_t ST7789_PIN_RESET = 8;
 static const uint8_t ST7789_PIN_DC    = 9;
-static const uint8_t ST7789_PIN_PWM   = 15;
+static const uint8_t ST7789_PIN_PWM   = 10;
 
 #define TOP_BAR_BG_COLOR color565(64, 64, 64)
 

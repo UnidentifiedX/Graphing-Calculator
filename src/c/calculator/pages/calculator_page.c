@@ -12,12 +12,14 @@
 #define CALCULATOR_PAGE_MAX_HISTORY_SIZE 4
 
 static const uint16_t CALCULATOR_PAGE_CURSOR_THICKNESS = 1;
-static const uint16_t CALCULATOR_PAGE_CURSOR_HEIGHT = 20;
+static const uint16_t CALCULATOR_PAGE_CURSOR_HEIGHT = 16;
+
 static const uint16_t CALCULATOR_PAGE_LEFT_MARGIN = 5;
 static const uint16_t CALCULATOR_PAGE_RIGHT_MARGIN = 10;
 static const uint16_t CALCULATOR_PAGE_TOP_MARGIN = 5;
 static const uint16_t CALCULATOR_PAGE_BOTTOM_MARGIN = 5;
 static const uint16_t CALCULATOR_PAGE_EXPRESSION_FONT_SCALE = 2;
+static const uint16_t CALCULATOR_PAGE_RADICAL_FONT_SCALE = 1;
 #define CALCULATOR_PAGE_EXPRESSION_FONT_COLOR color565(0, 0, 0)
 #define CALCULATOR_PAGE_EXPRESSION_BG_COLOR color565(255, 255, 255)
 
@@ -63,13 +65,15 @@ typedef enum {
 
 static void render_expressions(ST7789* display);
 static void keystroke_to_action(PageManager* manager, Keystroke key);
+static void clear_display(ST7789* display);
 
 static void init(Page* self, PageManager* manager) {
     ST7789* display = &manager->display;
+    clear_display(display);
     init_cursor(&calculator_page_data.cursor, display, CALCULATOR_PAGE_CURSOR_HEIGHT, CALCULATOR_PAGE_CURSOR_THICKNESS);
-    render_top_bar(display);
     render_expressions(display);
     enable_cursor(&calculator_page_data.cursor);
+    render_top_bar(display); // if you render the top bar last you can always be sure that the expressions are rendered below it 🤯 (fix later)
 }
 
 static void on_key(Page* self, PageManager* manager, Keystroke key) {
@@ -88,8 +92,7 @@ Page calculator_page = {
 };
 
 static void clear_display(ST7789* display) {
-    st7789_fill_rect(display, 0, 0, ST7789_WIDTH, ST7789_HEIGHT, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
-    render_top_bar(display);
+    st7789_fill_rect(display, 0, TOP_BAR_HEIGHT, ST7789_WIDTH, ST7789_HEIGHT, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
 }
 
 static void clear_history() {
@@ -99,6 +102,7 @@ static void clear_history() {
 }
 
 /// @brief returns the height of the current expresion in pixels
+/// as with project conventions everything is relative to the top left of where a 6x8 font would be drawn
 /// @param display 
 /// @param expr 
 /// @param y_offset offset from the bottom of the screen in pixels
@@ -112,10 +116,10 @@ static void render_expression(ST7789* display, TokenExpression* expr, Expression
         x = ST7789_WIDTH - CALCULATOR_PAGE_RIGHT_MARGIN - dimensions.w;
     }
     
-    draw_expression(display, 
+    draw_expression(display,
         expr,
         x,
-        ST7789_HEIGHT - dimensions.h - y_offset,
+        ST7789_HEIGHT - y_offset,
         dimensions,
         CALCULATOR_PAGE_EXPRESSION_FONT_SCALE,
         CALCULATOR_PAGE_EXPRESSION_FONT_COLOR,
@@ -136,9 +140,8 @@ static void render_expressions(ST7789* display) {
 
     // render the current expression at the bottom of the screen
     ExpressionDimensions current_dimensions = calculate_dimensions(&calculator_page_data.current_expression, CALCULATOR_PAGE_EXPRESSION_FONT_SCALE);
-    uint16_t height = current_dimensions.h;
+    uint16_t height = current_dimensions.ascent + current_dimensions.descent;
     render_expression(display, &calculator_page_data.current_expression, current_dimensions, CALCULATOR_PAGE_BOTTOM_MARGIN, ALIGN_LEFT, true);
-    height += 8 - SEPARATOR_LINE_MARGIN; // some space for the cursor
 
     // render history from the bottom of the screen to the top
     /// TODO: fix rendering too many history expressions that don't fit on the screen
@@ -161,13 +164,13 @@ static void render_expressions(ST7789* display) {
         height += SEPARATOR_LINE_MARGIN;
         ExpressionDimensions result_dimensions = result->result_dimensions;
         render_expression(display, &result->result, result_dimensions, height, ALIGN_RIGHT, false);
-        height += result_dimensions.h;
+        height += result_dimensions.ascent + result_dimensions.descent;
 
         // then expression
         height += EXPRESSION_RESULT_MARGIN;
         ExpressionDimensions expression_dimensions = result->expression_dimensions;
         render_expression(display, &result->expression, expression_dimensions, height, ALIGN_LEFT, false);
-        height += expression_dimensions.h;
+        height += expression_dimensions.ascent + expression_dimensions.descent;
     }
 
     // restore the cursor state
@@ -202,6 +205,7 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_TAN:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "tan" }); break;
         case KEYSTROKE_LN:                insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "ln" }); break;
         case KEYSTROKE_LOG10:             insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "log" }); break;
+        case KEYSTROKE_SQRT:              insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "sqrt" }); break;
         case KEYSTROKE_PI:                insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "pi" }); break;
         case KEYSTROKE_ENTER: {
             Expression expressions[256];
@@ -224,15 +228,15 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
 
             // circular buffer for history. [0] is the oldest, [history_size - 1] is the most recent. if overflow, we overwrite starting from [0]
             // current_history_index points to the most recent expression in the history
-            size_t index = calculator_page_data.history_size == 0 ? 0 : (calculator_page_data.history_latest + 1) % CALCULATOR_PAGE_MAX_HISTORY_SIZE;
-            calculator_page_data.history[index] = (ExpressionResult){
+            size_t history_index = calculator_page_data.history_size == 0 ? 0 : (calculator_page_data.history_latest + 1) % CALCULATOR_PAGE_MAX_HISTORY_SIZE;
+            calculator_page_data.history[history_index] = (ExpressionResult){
                 .expression = *expr,
                 .result = result_expr,
                 .expression_dimensions = calculate_dimensions(expr, CALCULATOR_PAGE_EXPRESSION_FONT_SCALE),
                 .result_dimensions = calculate_dimensions(&result_expr, CALCULATOR_PAGE_EXPRESSION_FONT_SCALE)
             };
 
-            calculator_page_data.history_latest = index;
+            calculator_page_data.history_latest = history_index;
             if (calculator_page_data.history_size < CALCULATOR_PAGE_MAX_HISTORY_SIZE) {
                 calculator_page_data.history_size++;
             }
@@ -255,9 +259,10 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         default: break;
     }
 
-    printf("Current expression: ");
-    output_token_expression(expr);
-    printf("Current cursors: node_index = %zu, char_index = %zu\n", expr->node_index, expr->char_index);
-    printf("\n");
+    // printf("Current expression: ");
+    // output_token_expression(expr);
+    // printf("Current cursors: node_index = %zu, char_index = %zu\n", expr->node_index, expr->char_index);
+    // printf("\n");
+    clear_display(&manager->display);
     render_expressions(&manager->display);
 }

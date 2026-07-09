@@ -17,6 +17,6 @@ typedef enum {
     INBUILT_FUNCTION_FRAC
 } InbuiltFunction;
 
-InbuiltFunction get_inbuilt_function_from_enum(const char* name);
+InbuiltFunction get_inbuilt_function_from_identifier(const char* name);
 char* get_inbuilt_function_name(InbuiltFunction func);
 size_t get_function_arity(InbuiltFunction func);

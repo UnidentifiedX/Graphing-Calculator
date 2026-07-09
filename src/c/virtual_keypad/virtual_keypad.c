@@ -31,6 +31,7 @@ Keystroke char_to_keystroke(char c) {
         case 'l': return KEYSTROKE_LN;
         case 'g': return KEYSTROKE_LOG10;
         case 'p': return KEYSTROKE_PI;
+        case 'q': return KEYSTROKE_SQRT;
         default:  return KEYSTROKE_INVALID; // Invalid keystroke
     }
 }

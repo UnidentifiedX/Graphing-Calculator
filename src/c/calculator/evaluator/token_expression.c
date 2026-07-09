@@ -27,7 +27,7 @@ typedef enum {
 } StringMergeDirection;
 
 bool is_special_display_function(char* identifier) {
-    InbuiltFunction func = get_inbuilt_function_from_enum(identifier);
+    InbuiltFunction func = get_inbuilt_function_from_identifier(identifier);
 
     return func == INBUILT_FUNCTION_SQRT ||
             func == INBUILT_FUNCTION_NROOT ||
@@ -115,7 +115,7 @@ void insert_node(TokenExpression* expr, Node* node) {
     else if (!is_between && node->type != NODE_TYPE_NUMBER)
         space_required = 2; // in a number and inserting a non-number node, need to split the number node into two and insert the new node in between
     else if (node->type == NODE_TYPE_FUNCTION && is_special_display_function(node->node.func_identifier))
-        space_required += get_function_arity(get_inbuilt_function_from_enum(node->node.func_identifier)); // function node + end of argument nodes
+        space_required += get_function_arity(get_inbuilt_function_from_identifier(node->node.func_identifier)); // function node + end of argument nodes
 
     if (expr->size + space_required > MAX_TOKEN_EXPRESSION_BUFFER_SIZE) {
         fprintf(stderr, "Error: Cannot insert node, buffer overflow\n");
@@ -124,7 +124,7 @@ void insert_node(TokenExpression* expr, Node* node) {
 
     if (current_node->type == NODE_TYPE_EMPTY) {
         if (node->type == NODE_TYPE_FUNCTION && is_special_display_function(node->node.func_identifier)) {
-            size_t arity = get_function_arity(get_inbuilt_function_from_enum(node->node.func_identifier));
+            size_t arity = get_function_arity(get_inbuilt_function_from_identifier(node->node.func_identifier));
             expr->node_buffer[expr->node_index] = *node;
             
             for (size_t i = 0; i < arity; i++) {
@@ -197,7 +197,7 @@ void insert_node(TokenExpression* expr, Node* node) {
         case NODE_TYPE_FUNCTION: {
             if (between_nodes) {
                 if (is_special_display_function(node->node.func_identifier)) {
-                    size_t arity = get_function_arity(get_inbuilt_function_from_enum(node->node.func_identifier));
+                    size_t arity = get_function_arity(get_inbuilt_function_from_identifier(node->node.func_identifier));
 
                     shift_tokens_right(expr, expr->node_index, arity + 1);
                     expr->node_buffer[expr->node_index] = *node;
@@ -210,7 +210,7 @@ void insert_node(TokenExpression* expr, Node* node) {
                 }
             } else {
                 if (is_special_display_function(node->node.func_identifier)) {
-                    size_t arity = get_function_arity(get_inbuilt_function_from_enum(node->node.func_identifier));
+                    size_t arity = get_function_arity(get_inbuilt_function_from_identifier(node->node.func_identifier));
                     
                     char* current_num_str = current_node->node.num_str;
                     char left_num_str[MAX_NUMBER_STRING_LENGTH];
@@ -256,7 +256,7 @@ void delete_node(TokenExpression* expr) {
             memmove(current_node->node.num_str, current_node->node.num_str + 1, strlen(current_node->node.num_str)); // delete the first character of the number string
         } else if (current_node->type == NODE_TYPE_FUNCTION) {
             if (is_special_display_function(current_node->node.func_identifier)) {
-                size_t arity = get_function_arity(get_inbuilt_function_from_enum(current_node->node.func_identifier));
+                size_t arity = get_function_arity(get_inbuilt_function_from_identifier(current_node->node.func_identifier));
                 size_t original_node_index = expr->node_index;
                 size_t depth_counter = 0;
                 size_t eoa_delete_count = 0;
@@ -265,7 +265,7 @@ void delete_node(TokenExpression* expr) {
                 while (i < expr->size && eoa_delete_count < arity) {
                     Node *node = &expr->node_buffer[i];
                     if (node->type == NODE_TYPE_FUNCTION && is_special_display_function(node->node.func_identifier)) {
-                        depth_counter += get_function_arity(get_inbuilt_function_from_enum(node->node.func_identifier));
+                        depth_counter += get_function_arity(get_inbuilt_function_from_identifier(node->node.func_identifier));
                     } else if (node->type == NODE_TYPE_END_OF_ARGUMENT) {
                         if (depth_counter == 0) {
                             expr->node_index = i;
@@ -306,7 +306,7 @@ void delete_node(TokenExpression* expr) {
                 if (node->type == NODE_TYPE_END_OF_ARGUMENT) {
                     depth++;
                 } else if (node->type == NODE_TYPE_FUNCTION && is_special_display_function(node->node.func_identifier)) {
-                    size_t arity = get_function_arity(get_inbuilt_function_from_enum(node->node.func_identifier));
+                    size_t arity = get_function_arity(get_inbuilt_function_from_identifier(node->node.func_identifier));
                     depth -= (int)arity;
 
                     if (depth <= 0) {
@@ -393,7 +393,7 @@ size_t to_tokens(TokenExpression* expr, SyntaxToken* tokens, size_t max_tokens) 
                 tokens[token_count++] = (SyntaxToken){ .kind = SYNTAX_KIND_OPEN_PARENTHESIS };
 
                 if (is_special_display_function(node->node.func_identifier)) {
-                    size_t arity = get_function_arity(get_inbuilt_function_from_enum(node->node.func_identifier));
+                    size_t arity = get_function_arity(get_inbuilt_function_from_identifier(node->node.func_identifier));
                     arity_stack[arity_stack_size++] = arity;
                 }
                 break;

@@ -115,7 +115,7 @@ double evaluate(const Expression* expressions, size_t index) {
         }
         case EXPRESSION_TYPE_CALL: {
             char* identifier = expression->value.call.identifier;
-            InbuiltFunction func = get_inbuilt_function_from_enum(identifier);
+            InbuiltFunction func = get_inbuilt_function_from_identifier(identifier);
 
             if (func == INBUILT_FUNCTION_INVALID) {
                 fprintf(stderr, "Error: Undefined function '%s'\n", identifier);
