@@ -30,6 +30,12 @@ double call_inbuilt_function(InbuiltFunction func, double* args, size_t argc) {
                 return NAN;
             }
             return pow(args[0], 1.0 / args[1]);
+        case INBUILT_FUNCTION_FRAC:
+            if (args[1] == 0) {
+                fprintf(stderr, "Error: Division by zero in fraction\n");
+                return NAN;
+            }
+            return args[0] / args[1];
         default:
             fprintf(stderr, "Error: Unknown inbuilt function\n");
             return NAN;

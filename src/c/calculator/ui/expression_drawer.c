@@ -6,19 +6,16 @@
 #include "core/expression.h"
 #include "core/inbuilt_functions.h"
 #include <math.h>
+#include "calculator/ui/special_expressions/draw_sqrt.h"
+#include "calculator/ui/special_expressions/draw_frac.h"
 
-static const uint16_t SQRT_TOP_BAR_MARGIN = 2;
-static const uint16_t SQRT_TOP_BAR_THICKNESS = 2;
-static const uint16_t SQRT_TICK_WIDTH = 2;
-static const uint16_t SQRT_TICK_EXPRESSION_MARGIN = 3;
-static const uint16_t SQRT_VERTICAL_BAR_THICKNESS = 2;
-static const uint16_t SQRT_MARGIN_AFTER_EXPRESSION = 2;
-static const uint16_t SQRT_MARGIN_AFTER_SQRT = 1;
+/*
+One REALLY IMPORTANT thing to note is that characters naturally have a pixel margin on all sides of the character. So that means there is no need
+for a margin for any character/between characters
+*/
 
 static ExpressionDimensions calculate_dimensions_impl(TokenExpression* expr, size_t* index, uint16_t font_scale);
 static void draw_expression_impl(ST7789* display, TokenExpression* expr, size_t* index, uint16_t* x, uint16_t baseline_y, ExpressionDimensions dimensions, uint16_t font_scale, uint16_t font_color, uint16_t bg_color, bool draw_cursor, Cursor* cursor);
-
-static ExpressionDimensions get_sqrt_dimensions(ExpressionDimensions arg);
 
 static char* syntaxkind_to_string(SyntaxKind kind) {
     switch (kind) {
@@ -55,10 +52,27 @@ ExpressionDimensions calculate_dimensions(TokenExpression* expr, uint16_t font_s
     return calculate_dimensions_impl(expr, &index, font_scale);
 }
 
+void draw_empty_box(ST7789* display, uint16_t x, uint16_t y, uint16_t font_scale, uint16_t color, uint16_t bg_color) {
+    st7789_draw_rect(display, 
+        x,
+        y - FONT_HEIGHT_6x8 * font_scale,
+        (FONT_WIDTH_6x8 - 1) * font_scale, // fonts have a 1-pixel margin on the sides of the character
+        (FONT_HEIGHT_6x8 - 1) * font_scale, // fonts have a 1-pixel margin below the character
+        1,
+        color, 
+        LINE_STYLE_DOTTED, 
+        bg_color
+    );
+}
+
+void draw_empty_box_centred(ST7789* display, uint16_t cx, uint16_t y, uint16_t font_scale, uint16_t color, uint16_t bg_color) {
+    draw_empty_box(display, cx - (FONT_WIDTH_6x8 * font_scale) / 2, y, font_scale, color, bg_color);
+}
+
 void draw_expression(ST7789* display, 
                 TokenExpression* expr, 
-                uint16_t x, 
-                uint16_t baseline_y,
+                uint16_t x,
+                uint16_t margin_bottom,
                 ExpressionDimensions dimensions,
                 uint16_t font_scale, 
                 uint16_t font_color, 
@@ -67,10 +81,8 @@ void draw_expression(ST7789* display,
                 Cursor* cursor) {
     uint16_t x_index = x;
     size_t index = 0;
-    // clear the background before drawing anything
-    size_t height = dimensions.ascent + dimensions.descent;
-    // st7789_fill_rect(display, x, baseline_y - height, ST7789_WIDTH - x, height, bg_color);
-    draw_expression_impl(display, expr, &index, &x_index, baseline_y, dimensions, font_scale, font_color, bg_color, draw_cursor, cursor);
+    
+    draw_expression_impl(display, expr, &index, &x_index, margin_bottom - dimensions.descent, dimensions, font_scale, font_color, bg_color, draw_cursor, cursor);
 }
 
 static ExpressionDimensions calculate_dimensions_impl(TokenExpression* expr, size_t* index, uint16_t font_scale) {
@@ -111,19 +123,21 @@ static ExpressionDimensions calculate_dimensions_impl(TokenExpression* expr, siz
                     InbuiltFunction func = get_inbuilt_function_from_identifier(node->node.func_identifier);
                     ExpressionDimensions arg_dimensions[MAX_ARGUMENTS];
                     get_special_function_argument_dimensions(arg_dimensions, func, expr, index, font_scale);
+                    ExpressionDimensions function_dimensions;
 
                     switch (func) { // because each special inbuilt function calculates its own width and height differently
                         case INBUILT_FUNCTION_SQRT: {
-                            // building a square root from left to right: the tick, then margin between tick and expression, then the expression and the top bar
-                            ExpressionDimensions sqrt_dimensions = get_sqrt_dimensions(arg_dimensions[0]);
-
-                            dimensions.w += sqrt_dimensions.w;
-                            dimensions.ascent = fmax(dimensions.ascent, sqrt_dimensions.ascent);
-                            dimensions.descent = fmax(dimensions.descent, sqrt_dimensions.descent);
-
+                            function_dimensions = get_sqrt_dimensions(arg_dimensions[0], font_scale);
                             break;
                         }
+                        case INBUILT_FUNCTION_FRAC: {
+                            function_dimensions = get_frac_dimensions(arg_dimensions[0], arg_dimensions[1], font_scale);                            break;
+                        }
                     }
+
+                    dimensions.w += function_dimensions.w;
+                    dimensions.ascent = fmax(dimensions.ascent, function_dimensions.ascent);
+                    dimensions.descent = fmax(dimensions.descent, function_dimensions.descent);
 
                     printf("arg_dimensions[0].w: %d, arg_dimensions[0].ascent: %d, arg_dimensions[0].descent: %d\n", arg_dimensions[0].w, arg_dimensions[0].ascent, arg_dimensions[0].descent);
                     printf("dimensions.w: %d, dimensions.ascent: %d, dimensions.descent: %d\n", dimensions.w, dimensions.ascent, dimensions.descent);
@@ -144,6 +158,7 @@ static ExpressionDimensions calculate_dimensions_impl(TokenExpression* expr, siz
     return dimensions;
 }
 
+// will draw until either the end of the expression or until it reaches an end of argument node, whichever comes first
 void draw_expression_impl(ST7789* display, 
                 TokenExpression* expr,
                 size_t *index,
@@ -228,47 +243,41 @@ void draw_expression_impl(ST7789* display,
                     
                     switch (func) {
                         case INBUILT_FUNCTION_SQRT: {
-                            ExpressionDimensions sqrt_dimensions = get_sqrt_dimensions(arg_dimensions[0]);
-                            uint16_t vertical_height = arg_dimensions[0].ascent + arg_dimensions[0].descent + SQRT_TOP_BAR_MARGIN + SQRT_TOP_BAR_THICKNESS;
-                            uint16_t top_bar_y = baseline_y - arg_dimensions[0].ascent - SQRT_TOP_BAR_MARGIN - SQRT_TOP_BAR_THICKNESS;
-                            uint16_t expression_x = *x + SQRT_TICK_WIDTH + SQRT_VERTICAL_BAR_THICKNESS + SQRT_TICK_EXPRESSION_MARGIN;
-
-                            // tick
-                            st7789_draw_horizontal_line(display, 
-                                *x, 
-                                baseline_y - SQRT_TOP_BAR_THICKNESS, 
-                                SQRT_TICK_WIDTH, 
-                                SQRT_TOP_BAR_THICKNESS, 
-                                font_color, 
-                                LINE_STYLE_SOLID, 
-                                bg_color
-                            );
-
-                            // vertical line
-                            st7789_draw_vertical_line(display, 
-                                *x + SQRT_TICK_WIDTH, 
-                                baseline_y - vertical_height, 
-                                vertical_height, 
-                                SQRT_TOP_BAR_THICKNESS, 
-                                font_color, 
-                                LINE_STYLE_SOLID, 
-                                bg_color
-                            );
-
-                            // top bar
-                            st7789_draw_horizontal_line(display, 
-                                *x + SQRT_TICK_WIDTH + SQRT_VERTICAL_BAR_THICKNESS,
-                                top_bar_y,
-                                arg_dimensions[0].w + SQRT_TICK_EXPRESSION_MARGIN,
-                                SQRT_TOP_BAR_THICKNESS,
-                                font_color,
-                                LINE_STYLE_SOLID,
-                                bg_color
-                            );
-
-                            *x = expression_x;
+                            *x = draw_sqrt_start(display, x, baseline_y, arg_dimensions, font_scale, font_color, bg_color);
                             draw_expression_impl(display, expr, index, x, baseline_y, arg_dimensions[0], font_scale, font_color, bg_color, draw_cursor, cursor);
+                            if (arg_dimensions[0].w == 0) { // draw box if square root is empty
+                                draw_empty_box(display, *x, baseline_y, font_scale, font_color, bg_color);
+                                *x += FONT_WIDTH_6x8 * font_scale;
+                            }
                             *x += SQRT_MARGIN_AFTER_EXPRESSION + SQRT_MARGIN_AFTER_SQRT;
+
+                            break;
+                        }
+                        // TODO: cursor placement and also this one extra pixel on the right of the fraction bar? minor issue though
+                        case INBUILT_FUNCTION_FRAC: {
+                            uint16_t frac_x0 = *x;
+                            *x = draw_frac_start(display, x, baseline_y, arg_dimensions, font_scale, font_color, bg_color);
+                            ExpressionDimensions frac_dimensions = get_frac_dimensions(arg_dimensions[0], arg_dimensions[1], font_scale);
+
+                            uint16_t inner_w = fmax(fmax(arg_dimensions[0].w, arg_dimensions[1].w), FONT_WIDTH_6x8 * font_scale);
+                            uint16_t numerator_x = *x + (inner_w - arg_dimensions[0].w) / 2;
+                            uint16_t denominator_x = *x + (inner_w - arg_dimensions[1].w) / 2;
+
+                            uint16_t fraction_center_y = baseline_y - get_frac_half(font_scale);
+                            uint16_t numerator_y = fraction_center_y - FRAC_SEPARATOR_THICKNESS - arg_dimensions[0].descent;
+                            uint16_t denominator_y = fraction_center_y + FRAC_SEPARATOR_THICKNESS + arg_dimensions[1].ascent;
+
+                            draw_expression_impl(display, expr, index, &numerator_x, numerator_y, arg_dimensions[0], font_scale, font_color, bg_color, draw_cursor, cursor);
+                            draw_expression_impl(display, expr, index, &denominator_x, denominator_y,arg_dimensions[1],font_scale, font_color, bg_color, draw_cursor, cursor);
+
+                            if (arg_dimensions[0].w == 0) { // draw box if numerator is empty
+                                draw_empty_box_centred(display, numerator_x, numerator_y, font_scale, font_color, bg_color);
+                            }
+                            if (arg_dimensions[1].w == 0) { // draw box if denominator is empty
+                                draw_empty_box_centred(display, denominator_x, denominator_y, font_scale, font_color, bg_color);
+                            }
+
+                            *x = frac_x0 + frac_dimensions.w + FRAC_MARGIN_AFTER_FRAC; // move x to the right of the fraction
 
                             break;
                         }
@@ -304,17 +313,3 @@ void draw_expression_impl(ST7789* display,
     }
 }
 
-static ExpressionDimensions get_sqrt_dimensions(ExpressionDimensions arg) {
-    ExpressionDimensions dimensions;
-
-    dimensions.w = SQRT_TICK_WIDTH + 
-        SQRT_VERTICAL_BAR_THICKNESS + 
-        SQRT_TICK_EXPRESSION_MARGIN + 
-        arg.w + 
-        SQRT_MARGIN_AFTER_EXPRESSION +
-        SQRT_MARGIN_AFTER_SQRT;
-    dimensions.ascent = SQRT_TOP_BAR_MARGIN + SQRT_TOP_BAR_THICKNESS + arg.ascent;
-    dimensions.descent = arg.descent;
-
-    return dimensions;
-}

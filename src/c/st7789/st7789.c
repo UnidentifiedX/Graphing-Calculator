@@ -206,6 +206,13 @@ void st7789_draw_vertical_line(ST7789 *display, uint16_t x, uint16_t y, uint16_t
     st7789_pin_high(display->_cs);
 }
 
+void st7789_draw_rect(ST7789 *display, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t t, uint16_t color, LineStyle style, uint16_t bg) {
+    st7789_draw_horizontal_line(display, x, y, w, t, color, style, bg); // Top
+    st7789_draw_horizontal_line(display, x, y + h - t, w, t, color, style, bg); // Bottom
+    st7789_draw_vertical_line(display, x, y + t, h - 2 * t, t, color, style, bg); // Left
+    st7789_draw_vertical_line(display, x + w - t, y + t, h - 2 * t, t, color, style, bg); // Right
+}
+
 void st7789_draw_char(ST7789 *display, uint16_t x, uint16_t y, char c, uint16_t color, uint8_t scale, uint16_t bg) {
     // if (c < 32 || c > 127) return; // Unsupported character
 

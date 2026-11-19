@@ -6,15 +6,14 @@ root.title("Calculator")
 
 expression = tk.StringVar()
 
-ser = serial.Serial("/dev/tty.usbmodem1301", 115200)
+port = "/dev/tty.usbmodem1301"
+ser = serial.Serial(port, 115200)
 
-def press(x):
-    expression.set(f"Sent key: {x}")
-
-    if (len(x) == 1):
+def write_to_serial(x):
+    if len(x) == 1:
         ser.write(x.encode())
         return
-    
+
     match x:
         case "LEFT":
             ser.write(b'L')
@@ -40,8 +39,25 @@ def press(x):
             ser.write(b'p')
         case "sqrt":
             ser.write(b'q')
+        case "frac":
+            ser.write(b'f')
 
-label = tk.Entry(root, textvariable=expression, font=("Arial", 24))
+def press(x):
+    global ser
+
+    expression.set(f"Sent key: {x}")
+
+    try:
+        write_to_serial(x)
+    except Exception as e: # when the port is not available, try to reconnect
+        ser = serial.Serial(port, 115200)
+        write_to_serial(x)
+
+label = tk.Entry(
+    root,
+    textvariable=expression,
+    font=("Arial", 24)
+)
 label.grid(row=0, column=0, columnspan=4)
 
 buttons = [
@@ -49,21 +65,49 @@ buttons = [
     "sin", "cos", "tan", "log",
     "UP", "DOWN", "(", ")",
     "LEFT", "RIGHT", "BKSP", "CLEAR",
-    "7","8","9","/",
-    "4","5","6","*",
-    "1","2","3","-",
-    "0",".","=","+"
+    "7", "8", "9", "/",
+    "4", "5", "6", "*",
+    "1", "2", "3", "-",
+    "0", ".", "=", "+"
 ]
 
 row = 1
 col = 0
 
 for b in buttons:
-    tk.Button(root, text=b, width=5, height=2,
-              command=lambda x=b: press(x)).grid(row=row, column=col)
+    tk.Button(
+        root,
+        text=b,
+        width=5,
+        height=2,
+        command=lambda x=b: press(x)
+    ).grid(row=row, column=col)
+
     col += 1
     if col > 3:
         col = 0
         row += 1
+
+# Position window in the bottom-right corner
+root.update_idletasks()
+
+window_width = root.winfo_width()
+window_height = root.winfo_height()
+
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+
+margin = 20
+
+x = screen_width - window_width - margin
+y = screen_height - window_height - margin
+
+root.geometry(f"+{x}+{y}")
+
+# Bring window to the front
+root.lift()
+root.focus_force()
+root.attributes("-topmost", True)
+root.after(100, lambda: root.attributes("-topmost", False))
 
 root.mainloop()

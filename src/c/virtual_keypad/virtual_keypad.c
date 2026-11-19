@@ -32,6 +32,7 @@ Keystroke char_to_keystroke(char c) {
         case 'g': return KEYSTROKE_LOG10;
         case 'p': return KEYSTROKE_PI;
         case 'q': return KEYSTROKE_SQRT;
+        case 'f': return KEYSTROKE_FRACTION;
         default:  return KEYSTROKE_INVALID; // Invalid keystroke
     }
 }

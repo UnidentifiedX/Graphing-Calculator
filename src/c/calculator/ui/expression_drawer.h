@@ -34,7 +34,7 @@ ExpressionDimensions calculate_dimensions(TokenExpression* expr, uint16_t font_s
 void draw_expression(ST7789* display, 
     TokenExpression* expr, 
     uint16_t x, 
-    uint16_t baseline_y,
+    uint16_t margin_bottom,
     ExpressionDimensions dimensions,
     uint16_t font_scale, 
     uint16_t font_color, 

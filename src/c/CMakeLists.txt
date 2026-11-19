@@ -64,7 +64,11 @@ add_executable(c main.c
         virtual_keypad/virtual_keypad.h
         virtual_keypad/virtual_keypad.c
         core/inbuilt_constants.h
-        core/inbuilt_constants.c)
+        core/inbuilt_constants.c
+        calculator/ui/special_expressions/draw_sqrt.h
+        calculator/ui/special_expressions/draw_sqrt.c
+        calculator/ui/special_expressions/draw_frac.h
+        calculator/ui/special_expressions/draw_frac.c)
 
 pico_set_program_name(c "c")
 pico_set_program_version(c "0.1")
