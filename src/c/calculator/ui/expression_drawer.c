@@ -8,10 +8,13 @@
 #include <math.h>
 #include "calculator/ui/special_expressions/draw_sqrt.h"
 #include "calculator/ui/special_expressions/draw_frac.h"
+#include "calculator/ui/special_expressions/draw_abs.h"
+#include "calculator/ui/special_expressions/draw_nrt.h"
+#include "calculator/ui/special_expressions/draw_pow.h"
 
 /*
-One REALLY IMPORTANT thing to note is that characters naturally have a pixel margin on all sides of the character. So that means there is no need
-for a margin for any character/between characters
+One REALLY IMPORTANT thing to note is that characters naturally have a pixel margin on all sides of the character EXCEPT THE TOP. 
+So that means there is no need for a margin for any character/between characters except the top
 */
 
 static ExpressionDimensions calculate_dimensions_impl(TokenExpression* expr, size_t* index, uint16_t font_scale);
@@ -41,6 +44,19 @@ static char* inbuiltconstant_to_string(InbuiltConstant constant) {
 
 static void get_special_function_argument_dimensions(ExpressionDimensions* dimensions, InbuiltFunction func, TokenExpression* expr, size_t* index, uint16_t font_scale) {
     size_t arity = get_function_arity(func);
+
+    if (func == INBUILT_FUNCTION_NRT) {
+        // the first argument is the index, which is smaller and baseline shifted up
+        dimensions[0] = calculate_dimensions_impl(expr, index, 1);
+        dimensions[1] = calculate_dimensions_impl(expr, index, font_scale);
+        return;
+    }
+    if (func == INBUILT_FUNCTION_POW) {
+        // the second argument is the exponent, which is smaller and baseline shifted up
+        dimensions[0] = calculate_dimensions_impl(expr, index, font_scale);
+        dimensions[1] = calculate_dimensions_impl(expr, index, 1);
+        return;
+    }
 
     for (size_t i = 0; i < arity; i++) {
         dimensions[i] = calculate_dimensions_impl(expr, index, font_scale);
@@ -131,7 +147,20 @@ static ExpressionDimensions calculate_dimensions_impl(TokenExpression* expr, siz
                             break;
                         }
                         case INBUILT_FUNCTION_FRAC: {
-                            function_dimensions = get_frac_dimensions(arg_dimensions[0], arg_dimensions[1], font_scale);                            break;
+                            function_dimensions = get_frac_dimensions(arg_dimensions[0], arg_dimensions[1], font_scale);                            
+                            break;
+                        }
+                        case INBUILT_FUNCTION_ABS: {
+                            function_dimensions = get_abs_dimensions(arg_dimensions[0], font_scale);
+                            break;
+                        }
+                        case INBUILT_FUNCTION_NRT: {
+                            function_dimensions = get_nrt_dimensions(arg_dimensions[0], arg_dimensions[1], font_scale);
+                            break;
+                        }
+                        case INBUILT_FUNCTION_POW: {
+                            function_dimensions = get_pow_dimensions(arg_dimensions[0], arg_dimensions[1], font_scale);
+                            break;
                         }
                     }
 
@@ -278,6 +307,70 @@ void draw_expression_impl(ST7789* display,
                             }
 
                             *x = frac_x0 + frac_dimensions.w + FRAC_MARGIN_AFTER_FRAC; // move x to the right of the fraction
+
+                            break;
+                        }
+                        case INBUILT_FUNCTION_ABS: {
+                            *x = draw_abs_start(display, x, baseline_y, arg_dimensions, font_scale, font_color, bg_color);
+                            draw_expression_impl(display, expr, index, x, baseline_y, arg_dimensions[0], font_scale, font_color, bg_color, draw_cursor, cursor);
+                            if (arg_dimensions[0].w == 0) { // draw box if absolute value is empty
+                                draw_empty_box(display, *x, baseline_y, font_scale, font_color, bg_color);
+                                *x += FONT_WIDTH_6x8 * font_scale;
+                            }
+                            *x += ABS_MARGIN_BEFORE_AFTER_EXPRESSION + 2 * ABS_VERTICAL_BAR_THICKNESS; // move x to the right of the absolute value expression
+
+                            break;
+                        }
+                        case INBUILT_FUNCTION_NRT: {
+                            // drawing the nrt is pretty easy cause we just draw the index, then a space, then the square root
+                            // the index is smaller and baseline shifted up so it's at the top of the square root
+                            // the baseline of the index is such that half of the index is above the sqrt bar and half is below the sqrt bar
+
+                            // index
+                            uint16_t index_baseline_y = baseline_y - get_nrt_index_raise(arg_dimensions[0], arg_dimensions[1], font_scale);
+                            draw_expression_impl(display, expr, index, x, index_baseline_y, arg_dimensions[0], 1, font_color, bg_color, draw_cursor, cursor);
+                            if (arg_dimensions[0].w == 0) { // draw box if index is empty
+                                draw_empty_box(display, *x, index_baseline_y, 1, font_color, bg_color);
+                                *x += FONT_WIDTH_6x8;
+                            }
+
+                            // space between index and sqrt
+                            *x += NRT_MARGIN_INDEX_TO_ROOT;
+
+                            // sqrt
+                            *x = draw_sqrt_start(display, x, baseline_y, &arg_dimensions[1], font_scale, font_color, bg_color);
+                            draw_expression_impl(display, expr, index, x, baseline_y, arg_dimensions[1], font_scale, font_color, bg_color, draw_cursor, cursor);
+                            if (arg_dimensions[1].w == 0) { // draw box if radicand is empty
+                                draw_empty_box(display, *x, baseline_y, font_scale, font_color, bg_color);
+                                *x += FONT_WIDTH_6x8 * font_scale;
+                            }
+
+                            *x += SQRT_MARGIN_AFTER_EXPRESSION + SQRT_MARGIN_AFTER_SQRT;
+
+                            break;
+                        }
+                        case INBUILT_FUNCTION_POW: { // one limitation is that uhh you actually dont know if you're typing in the base or outside the base so that's something that needs to be fixed
+                            // drawing the pow is basically drawing nrt but in reverse order
+
+                            // base
+                            draw_expression_impl(display, expr, index, x, baseline_y, arg_dimensions[0], font_scale, font_color, bg_color, draw_cursor, cursor);
+                            if (arg_dimensions[0].w == 0) { // draw box if base is empty
+                                draw_empty_box(display, *x, baseline_y, font_scale, font_color, bg_color);
+                                *x += FONT_WIDTH_6x8 * font_scale;
+                            }
+
+                            // space between base and exponent
+                            *x += POW_MARGIN_BASE_TO_EXPONENT;
+
+                            // exponent
+                            uint16_t exponent_baseline_y = baseline_y - get_pow_exponent_raise(arg_dimensions[0], arg_dimensions[1], font_scale);
+                            draw_expression_impl(display, expr, index, x, exponent_baseline_y, arg_dimensions[1], 1, font_color, bg_color, draw_cursor, cursor);
+                            if (arg_dimensions[1].w == 0) { // draw box if exponent is empty
+                                draw_empty_box(display, *x, exponent_baseline_y, 1, font_color, bg_color);
+                                *x += FONT_WIDTH_6x8;
+                            }
+
+                            *x += POW_MARGIN_AFTER_POW;
 
                             break;
                         }

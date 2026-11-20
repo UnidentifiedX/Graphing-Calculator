@@ -30,10 +30,11 @@ bool is_special_display_function(char* identifier) {
     InbuiltFunction func = get_inbuilt_function_from_identifier(identifier);
 
     return func == INBUILT_FUNCTION_SQRT ||
-            func == INBUILT_FUNCTION_NROOT ||
+            func == INBUILT_FUNCTION_NRT ||
             func == INBUILT_FUNCTION_POW ||
             func == INBUILT_FUNCTION_EXP ||
-            func == INBUILT_FUNCTION_FRAC;
+            func == INBUILT_FUNCTION_FRAC ||
+            func == INBUILT_FUNCTION_ABS;
 }
 
 static bool is_between_nodes(TokenExpression* expr);

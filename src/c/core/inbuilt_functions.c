@@ -11,7 +11,7 @@ InbuiltFunction get_inbuilt_function_from_identifier(const char* name) {
     if (strcmp(name, "sqrt") == 0)  return INBUILT_FUNCTION_SQRT;
     if (strcmp(name, "pow") == 0)   return INBUILT_FUNCTION_POW;
     if (strcmp(name, "abs") == 0)   return INBUILT_FUNCTION_ABS;
-    if (strcmp(name, "nroot") == 0) return INBUILT_FUNCTION_NROOT;
+    if (strcmp(name, "nrt") == 0)   return INBUILT_FUNCTION_NRT;
     if (strcmp(name, "frac") == 0)  return INBUILT_FUNCTION_FRAC;
 
     return INBUILT_FUNCTION_INVALID; // Invalid function
@@ -27,7 +27,7 @@ char* get_inbuilt_function_name(InbuiltFunction func) {
         case INBUILT_FUNCTION_SQRT:  return "sqrt";
         case INBUILT_FUNCTION_POW:   return "pow";
         case INBUILT_FUNCTION_ABS:   return "abs";
-        case INBUILT_FUNCTION_NROOT: return "nroot";
+        case INBUILT_FUNCTION_NRT:   return "nrt";
         case INBUILT_FUNCTION_FRAC:  return "frac";
         default:                     return NULL; // Invalid function
     }
@@ -45,7 +45,7 @@ size_t get_function_arity(InbuiltFunction func) {
         case INBUILT_FUNCTION_EXP:
             return 1;
         case INBUILT_FUNCTION_POW:
-        case INBUILT_FUNCTION_NROOT:
+        case INBUILT_FUNCTION_NRT:
         case INBUILT_FUNCTION_FRAC:
             return 2;
         default:

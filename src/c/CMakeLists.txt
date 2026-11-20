@@ -68,7 +68,13 @@ add_executable(c main.c
         calculator/ui/special_expressions/draw_sqrt.h
         calculator/ui/special_expressions/draw_sqrt.c
         calculator/ui/special_expressions/draw_frac.h
-        calculator/ui/special_expressions/draw_frac.c)
+        calculator/ui/special_expressions/draw_frac.c
+        calculator/ui/special_expressions/draw_abs.c
+        calculator/ui/special_expressions/draw_abs.h
+        calculator/ui/special_expressions/draw_nrt.c
+        calculator/ui/special_expressions/draw_nrt.h
+        calculator/ui/special_expressions/draw_pow.c
+        calculator/ui/special_expressions/draw_pow.h)
 
 pico_set_program_name(c "c")
 pico_set_program_version(c "0.1")

@@ -41,6 +41,14 @@ def write_to_serial(x):
             ser.write(b'q')
         case "frac":
             ser.write(b'f')
+        case "ln":
+            ser.write(b'l')
+        case "abs":
+            ser.write(b'a')
+        case "nrt":
+            ser.write(b'n')
+        case "pow":
+            ser.write(b'w')
 
 def press(x):
     global ser
@@ -61,6 +69,7 @@ label = tk.Entry(
 label.grid(row=0, column=0, columnspan=4)
 
 buttons = [
+    "e", "ln", "nrt", "abs",
     "pi", "frac", "sqrt", "pow",
     "sin", "cos", "tan", "log",
     "UP", "DOWN", "(", ")",

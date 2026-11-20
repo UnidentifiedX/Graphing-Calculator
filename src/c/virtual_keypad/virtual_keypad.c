@@ -17,7 +17,7 @@ Keystroke char_to_keystroke(char c) {
         case '*': return KEYSTROKE_MULTIPLY;
         case '/': return KEYSTROKE_DIVIDE;
         case '.': return KEYSTROKE_DECIMAL_POINT;
-        case '^': return KEYSTROKE_POWER;
+        case '^': return KEYSTROKE_POW;
         case '(': return KEYSTROKE_OPEN_PARENTHESIS;
         case ')': return KEYSTROKE_CLOSE_PARENTHESIS;
         case '=': return KEYSTROKE_ENTER;
@@ -32,7 +32,11 @@ Keystroke char_to_keystroke(char c) {
         case 'g': return KEYSTROKE_LOG10;
         case 'p': return KEYSTROKE_PI;
         case 'q': return KEYSTROKE_SQRT;
-        case 'f': return KEYSTROKE_FRACTION;
+        case 'f': return KEYSTROKE_FRAC;
+        case 'e': return KEYSTROKE_E;
+        case 'a': return KEYSTROKE_ABS;
+        case 'n': return KEYSTROKE_NRT;
+        case 'w': return KEYSTROKE_POW;
         default:  return KEYSTROKE_INVALID; // Invalid keystroke
     }
 }

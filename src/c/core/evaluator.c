@@ -24,12 +24,12 @@ double call_inbuilt_function(InbuiltFunction func, double* args, size_t argc) {
             return pow(args[0], args[1]);
         case INBUILT_FUNCTION_ABS:
             return fabs(args[0]);
-        case INBUILT_FUNCTION_NROOT:
-            if (args[1] == 0) {
+        case INBUILT_FUNCTION_NRT:
+            if (args[0] == 0) {
                 fprintf(stderr, "Error: Cannot take the 0th root\n");
                 return NAN;
             }
-            return pow(args[0], 1.0 / args[1]);
+            return pow(args[1], 1.0 / args[0]);
         case INBUILT_FUNCTION_FRAC:
             if (args[1] == 0) {
                 fprintf(stderr, "Error: Division by zero in fraction\n");

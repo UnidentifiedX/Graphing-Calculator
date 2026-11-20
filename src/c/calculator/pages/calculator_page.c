@@ -206,8 +206,12 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_LN:                insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "ln" }); break;
         case KEYSTROKE_LOG10:             insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "log" }); break;
         case KEYSTROKE_SQRT:              insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "sqrt" }); break;
-        case KEYSTROKE_FRACTION:          insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "frac" }); break;
+        case KEYSTROKE_NRT:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "nrt" }); break;
+        case KEYSTROKE_FRAC:              insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "frac" }); break;
+        case KEYSTROKE_ABS:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "abs" }); break;
+        case KEYSTROKE_POW:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "pow" }); break;
         case KEYSTROKE_PI:                insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "pi" }); break;
+        case KEYSTROKE_E:                 insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "e" }); break;
         case KEYSTROKE_ENTER: {
             Expression expressions[256];
             SyntaxToken tokens[256];
