@@ -12,6 +12,7 @@ Keystroke char_to_keystroke(char c) {
         case '7': return KEYSTROKE_7;
         case '8': return KEYSTROKE_8;
         case '9': return KEYSTROKE_9;
+        case 'x': return KEYSTROKE_X;
         case '+': return KEYSTROKE_PLUS;
         case '-': return KEYSTROKE_MINUS;
         case '*': return KEYSTROKE_MULTIPLY;
@@ -25,6 +26,8 @@ Keystroke char_to_keystroke(char c) {
         case 'B': return KEYSTROKE_BACKSPACE;
         case 'L': return KEYSTROKE_LEFT;
         case 'R': return KEYSTROKE_RIGHT;
+        case 'U': return KEYSTROKE_UP;
+        case 'D': return KEYSTROKE_DOWN;
         case 's': return KEYSTROKE_SIN;
         case 'c': return KEYSTROKE_COS;
         case 't': return KEYSTROKE_TAN;
@@ -37,6 +40,9 @@ Keystroke char_to_keystroke(char c) {
         case 'a': return KEYSTROKE_ABS;
         case 'n': return KEYSTROKE_NRT;
         case 'w': return KEYSTROKE_POW;
+        case 'M': return KEYSTROKE_MODE;
+        case 'G': return KEYSTROKE_GRAPH;
+        case 'Q': return KEYSTROKE_QUIT;
         default:  return KEYSTROKE_INVALID; // Invalid keystroke
     }
 }

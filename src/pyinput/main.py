@@ -6,7 +6,7 @@ root.title("Calculator")
 
 expression = tk.StringVar()
 
-port = "/dev/tty.usbmodem1301"
+port = "/dev/tty.usbmodem11301"
 ser = serial.Serial(port, 115200)
 
 def write_to_serial(x):
@@ -49,6 +49,12 @@ def write_to_serial(x):
             ser.write(b'n')
         case "pow":
             ser.write(b'w')
+        case "quit":
+            ser.write(b'Q')
+        case "graph":
+            ser.write(b'G')
+        case "mode":
+            ser.write(b'M')
 
 def press(x):
     global ser
@@ -69,6 +75,7 @@ label = tk.Entry(
 label.grid(row=0, column=0, columnspan=4)
 
 buttons = [
+    "quit", "graph", "x", "mode",
     "e", "ln", "nrt", "abs",
     "pi", "frac", "sqrt", "pow",
     "sin", "cos", "tan", "log",

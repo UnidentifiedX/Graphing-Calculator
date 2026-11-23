@@ -25,3 +25,4 @@ typedef struct Page {
 void init_page_manager(PageManager* manager);
 void set_page(PageManager* manager, Page* page);
 void render_top_bar(ST7789* display);
+void clear_display(ST7789* display, uint16_t bg_color);

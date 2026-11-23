@@ -3,6 +3,7 @@
 #include "pico/stdlib.h"
 #include "calculator/pages/pages.h"
 #include "calculator/pages/calculator_page.h"
+#include "calculator/pages/graphing_page.h"
 #include "virtual_keypad/virtual_keypad.h"
 
 int main()
@@ -15,7 +16,7 @@ int main()
 
     PageManager page_manager;
     init_page_manager(&page_manager);
-    set_page(&page_manager, &calculator_page);
+    set_page(&page_manager, &graphing_page);
 
     uint64_t last_tick = time_us_64();
     while (true) {

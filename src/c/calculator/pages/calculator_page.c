@@ -8,24 +8,26 @@
 #include <stdio.h>
 #include "calculator/ui/expression_drawer.h"
 #include "core/inbuilt_functions.h"
+#include "calculator/pages/graphing_page.h"
 
 #define CALCULATOR_PAGE_MAX_HISTORY_SIZE 4
 
-static const uint16_t CALCULATOR_PAGE_CURSOR_THICKNESS = 1;
-static const uint16_t CALCULATOR_PAGE_CURSOR_HEIGHT = 16;
+static const uint16_t CALCULATOR_PAGE_CURSOR_THICKNESS      = 1;
+static const uint16_t CALCULATOR_PAGE_CURSOR_HEIGHT         = 16;
 
-static const uint16_t CALCULATOR_PAGE_LEFT_MARGIN = 5;
-static const uint16_t CALCULATOR_PAGE_RIGHT_MARGIN = 10;
-static const uint16_t CALCULATOR_PAGE_TOP_MARGIN = 5;
-static const uint16_t CALCULATOR_PAGE_BOTTOM_MARGIN = 5;
+static const uint16_t CALCULATOR_PAGE_LEFT_MARGIN           = 5;
+static const uint16_t CALCULATOR_PAGE_RIGHT_MARGIN          = 10;
+static const uint16_t CALCULATOR_PAGE_TOP_MARGIN            = 5;
+static const uint16_t CALCULATOR_PAGE_BOTTOM_MARGIN         = 5;
 static const uint16_t CALCULATOR_PAGE_EXPRESSION_FONT_SCALE = 2;
-static const uint16_t CALCULATOR_PAGE_RADICAL_FONT_SCALE = 1;
-#define CALCULATOR_PAGE_EXPRESSION_FONT_COLOR color565(0, 0, 0)
-#define CALCULATOR_PAGE_EXPRESSION_BG_COLOR color565(255, 255, 255)
+static const uint16_t CALCULATOR_PAGE_RADICAL_FONT_SCALE    = 1;
 
-static const uint16_t EXPRESSION_RESULT_MARGIN = 2; // leave some margin between expression and result
-static const uint16_t SEPARATOR_LINE_MARGIN = 4; // leave some margin between the separator line and expressions
-static const uint16_t SEPARATOR_LINE_THICKNESS = 1; // thickness of the separator line
+static const uint16_t CALCULATOR_PAGE_EXPRESSION_FONT_COLOR = COLOR565(0, 0, 0); // black
+static const uint16_t CALCULATOR_PAGE_EXPRESSION_BG_COLOR   = COLOR565(255, 255, 255); // white
+
+static const uint16_t EXPRESSION_RESULT_MARGIN              = 2; // leave some margin between expression and result
+static const uint16_t SEPARATOR_LINE_MARGIN                 = 4; // leave some margin between the separator line and expressions
+static const uint16_t SEPARATOR_LINE_THICKNESS              = 1; // thickness of the separator line
 
 typedef struct {
     TokenExpression expression;
@@ -65,11 +67,10 @@ typedef enum {
 
 static void render_expressions(ST7789* display);
 static void keystroke_to_action(PageManager* manager, Keystroke key);
-static void clear_display(ST7789* display);
 
 static void init(Page* self, PageManager* manager) {
     ST7789* display = &manager->display;
-    clear_display(display);
+    clear_display(display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
     init_cursor(&calculator_page_data.cursor, display, CALCULATOR_PAGE_CURSOR_HEIGHT, CALCULATOR_PAGE_CURSOR_THICKNESS);
     render_expressions(display);
     enable_cursor(&calculator_page_data.cursor);
@@ -91,18 +92,12 @@ Page calculator_page = {
     .data = &calculator_page_data
 };
 
-static void clear_display(ST7789* display) {
-    st7789_fill_rect(display, 0, TOP_BAR_HEIGHT, ST7789_WIDTH, ST7789_HEIGHT, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
-}
-
 static void clear_history() {
     calculator_page_data.history_size = 0;
     calculator_page_data.history_latest = 0;
     calculator_page_data.browsing_history_index = 0;
 }
 
-/// @brief returns the height of the current expresion in pixels
-/// as with project conventions everything is relative to the top left of where a 6x8 font would be drawn
 /// @param display 
 /// @param expr 
 /// @param y_offset offset from the bottom of the screen in pixels
@@ -210,6 +205,7 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_FRAC:              insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "frac" }); break;
         case KEYSTROKE_ABS:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "abs" }); break;
         case KEYSTROKE_POW:               insert_node(expr, &(Node){ .type = NODE_TYPE_FUNCTION, .node.func_identifier = "pow" }); break;
+        case KEYSTROKE_X:                 insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "x" }); break;
         case KEYSTROKE_PI:                insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "pi" }); break;
         case KEYSTROKE_E:                 insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "e" }); break;
         case KEYSTROKE_ENTER: {
@@ -253,7 +249,7 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_CLEAR: {
             // clear the current expression. if clear clear the whole history as well
             if (expr->size == 0) {
-                clear_display(&manager->display);
+                clear_display(&manager->display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
                 clear_history();
             }
             reset_token_expression(expr);
@@ -261,13 +257,15 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         }
         case KEYSTROKE_LEFT: shift_cursor(expr, CURSOR_DIRECTION_LEFT); break;
         case KEYSTROKE_RIGHT: shift_cursor(expr, CURSOR_DIRECTION_RIGHT); break;
-        default: break;
+        case KEYSTROKE_GRAPH: set_page(manager, &graphing_page); return;
+        default: return;
     }
 
     // printf("Current expression: ");
     // output_token_expression(expr);
     // printf("Current cursors: node_index = %zu, char_index = %zu\n", expr->node_index, expr->char_index);
     // printf("\n");
-    clear_display(&manager->display);
+    
+    clear_display(&manager->display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
     render_expressions(&manager->display);
 }

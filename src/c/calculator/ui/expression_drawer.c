@@ -1,3 +1,4 @@
+#include "pico/stdlib.h"
 #include "expression_drawer.h"
 #include "st7789/st7789.h"
 #include <string.h>
@@ -5,7 +6,6 @@
 #include "core/inbuilt_constants.h"
 #include "core/expression.h"
 #include "core/inbuilt_functions.h"
-#include <math.h>
 #include "calculator/ui/special_expressions/draw_sqrt.h"
 #include "calculator/ui/special_expressions/draw_frac.h"
 #include "calculator/ui/special_expressions/draw_abs.h"
@@ -165,8 +165,8 @@ static ExpressionDimensions calculate_dimensions_impl(TokenExpression* expr, siz
                     }
 
                     dimensions.w += function_dimensions.w;
-                    dimensions.ascent = fmax(dimensions.ascent, function_dimensions.ascent);
-                    dimensions.descent = fmax(dimensions.descent, function_dimensions.descent);
+                    dimensions.ascent = MAX(dimensions.ascent, function_dimensions.ascent);
+                    dimensions.descent = MAX(dimensions.descent, function_dimensions.descent);
 
                     printf("arg_dimensions[0].w: %d, arg_dimensions[0].ascent: %d, arg_dimensions[0].descent: %d\n", arg_dimensions[0].w, arg_dimensions[0].ascent, arg_dimensions[0].descent);
                     printf("dimensions.w: %d, dimensions.ascent: %d, dimensions.descent: %d\n", dimensions.w, dimensions.ascent, dimensions.descent);
@@ -288,7 +288,7 @@ void draw_expression_impl(ST7789* display,
                             *x = draw_frac_start(display, x, baseline_y, arg_dimensions, font_scale, font_color, bg_color);
                             ExpressionDimensions frac_dimensions = get_frac_dimensions(arg_dimensions[0], arg_dimensions[1], font_scale);
 
-                            uint16_t inner_w = fmax(fmax(arg_dimensions[0].w, arg_dimensions[1].w), FONT_WIDTH_6x8 * font_scale);
+                            uint16_t inner_w = MAX(MAX(arg_dimensions[0].w, arg_dimensions[1].w), FONT_WIDTH_6x8 * font_scale);
                             uint16_t numerator_x = *x + (inner_w - arg_dimensions[0].w) / 2;
                             uint16_t denominator_x = *x + (inner_w - arg_dimensions[1].w) / 2;
 
@@ -317,7 +317,7 @@ void draw_expression_impl(ST7789* display,
                                 draw_empty_box(display, *x, baseline_y, font_scale, font_color, bg_color);
                                 *x += FONT_WIDTH_6x8 * font_scale;
                             }
-                            *x += ABS_MARGIN_BEFORE_AFTER_EXPRESSION + 2 * ABS_VERTICAL_BAR_THICKNESS; // move x to the right of the absolute value expression
+                            *x += ABS_MARGIN_BEFORE_AFTER_ABS + 2 * ABS_VERTICAL_BAR_THICKNESS; // move x to the right of the absolute value expression
 
                             break;
                         }

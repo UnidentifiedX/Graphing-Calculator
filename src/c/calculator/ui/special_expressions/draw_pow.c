@@ -1,7 +1,7 @@
 #include "draw_pow.h"
 #include "calculator/ui/expression_drawer.h"
 #include <stdint.h>
-#include <math.h>
+#include "pico/stdlib.h"
 
 int get_pow_exponent_raise(ExpressionDimensions base, ExpressionDimensions exponent, uint16_t font_scale) {
     int base_ascent = base.ascent + base.descent;
@@ -16,8 +16,8 @@ ExpressionDimensions get_pow_dimensions(ExpressionDimensions base, ExpressionDim
     int exponent_descent = (int)exponent.descent - raise; // negative for normal exponents
     if (exponent_descent < 0) exponent_descent = 0;
 
-    dimensions.w = fmax(base.w, FONT_WIDTH_6x8 * font_scale) + POW_MARGIN_BASE_TO_EXPONENT + fmax(exponent.w, FONT_WIDTH_6x8) + POW_MARGIN_AFTER_POW;
-    dimensions.ascent  = (uint16_t)fmax((int)base.ascent, exponent_ascent);
-    dimensions.descent = (uint16_t)fmax((int)base.descent, exponent_descent);
+    dimensions.w = MAX(base.w, FONT_WIDTH_6x8 * font_scale) + POW_MARGIN_BASE_TO_EXPONENT + MAX(exponent.w, FONT_WIDTH_6x8) + POW_MARGIN_AFTER_POW;
+    dimensions.ascent  = (uint16_t)MAX((int)base.ascent, exponent_ascent);
+    dimensions.descent = (uint16_t)MAX((int)base.descent, exponent_descent);
     return dimensions;
 }

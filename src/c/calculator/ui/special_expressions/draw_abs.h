@@ -4,7 +4,7 @@
 #include "calculator/ui/expression_drawer.h"
 #include <stdint.h>
 
-static const uint16_t ABS_MARGIN_BEFORE_AFTER_EXPRESSION = 2;
+static const uint16_t ABS_MARGIN_BEFORE_AFTER_ABS = 2;
 static const uint16_t ABS_VERTICAL_BAR_THICKNESS = 2;
 
 uint16_t draw_abs_start(ST7789* display, 

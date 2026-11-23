@@ -1,7 +1,7 @@
 #include "draw_sqrt.h"
 #include "calculator/ui/expression_drawer.h"
 #include <stdint.h>
-#include <math.h>
+#include "pico/stdlib.h"
 
 static const uint16_t SQRT_TOP_BAR_MARGIN = 2;
 static const uint16_t SQRT_TOP_BAR_THICKNESS = 2;
@@ -19,7 +19,7 @@ ExpressionDimensions get_sqrt_dimensions(ExpressionDimensions arg, uint16_t font
     dimensions.w = SQRT_TICK_WIDTH +
                    SQRT_VERTICAL_BAR_THICKNESS +
                    SQRT_TICK_EXPRESSION_MARGIN +
-                   fmax(arg.w, FONT_WIDTH_6x8 * font_scale) +
+                   MAX(arg.w, FONT_WIDTH_6x8 * font_scale) +
                    SQRT_MARGIN_AFTER_EXPRESSION +
                    SQRT_MARGIN_AFTER_SQRT;
     dimensions.ascent = SQRT_TOP_BAR_MARGIN + SQRT_TOP_BAR_THICKNESS + arg.ascent;
@@ -43,7 +43,7 @@ uint16_t draw_sqrt_start(ST7789 *display, uint16_t *x, uint16_t baseline_y, Expr
                           SQRT_TOP_BAR_THICKNESS, font_color, LINE_STYLE_SOLID, bg_color);
     // top bar
     st7789_draw_horizontal_line(display, *x + SQRT_TICK_WIDTH + SQRT_VERTICAL_BAR_THICKNESS, top,
-                                fmax(arg_dimensions[0].w, FONT_WIDTH_6x8 * font_scale) + SQRT_TICK_EXPRESSION_MARGIN,
+                                MAX(arg_dimensions[0].w, FONT_WIDTH_6x8 * font_scale) + SQRT_TICK_EXPRESSION_MARGIN,
                                 SQRT_TOP_BAR_THICKNESS, font_color, LINE_STYLE_SOLID, bg_color);
 
     return expression_x;

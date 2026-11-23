@@ -74,7 +74,9 @@ add_executable(c main.c
         calculator/ui/special_expressions/draw_nrt.c
         calculator/ui/special_expressions/draw_nrt.h
         calculator/ui/special_expressions/draw_pow.c
-        calculator/ui/special_expressions/draw_pow.h)
+        calculator/ui/special_expressions/draw_pow.h
+        calculator/pages/graphing_page.c
+        calculator/pages/graphing_page.h)
 
 pico_set_program_name(c "c")
 pico_set_program_version(c "0.1")

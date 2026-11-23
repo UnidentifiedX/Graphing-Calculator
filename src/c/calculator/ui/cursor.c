@@ -11,11 +11,11 @@ void init_cursor(Cursor* cursor, ST7789* display, uint16_t h, uint16_t t) {
 }
 
 static void draw_cursor(Cursor* cursor, uint16_t color) {
-    st7789_draw_vertical_line(cursor->display, cursor->x, cursor->y, cursor->h, cursor->t, color, LINE_STYLE_SOLID, color565(255, 255, 255));
+    st7789_draw_vertical_line(cursor->display, cursor->x, cursor->y, cursor->h, cursor->t, color, LINE_STYLE_SOLID, COLOR565(255, 255, 255));
 }
 
 static void erase_cursor(Cursor* cursor) {
-    draw_cursor(cursor, color565(255, 255, 255)); // White (background color)
+    draw_cursor(cursor, COLOR565(255, 255, 255)); // White (background color)
 }
 
 void toggle_cursor(Cursor* cursor) {
@@ -23,7 +23,7 @@ void toggle_cursor(Cursor* cursor) {
         return; // Do nothing if the cursor is not enabled
     }
 
-    cursor->visible ? erase_cursor(cursor) : draw_cursor(cursor, color565(0, 0, 0)); // Black (cursor color)
+    cursor->visible ? erase_cursor(cursor) : draw_cursor(cursor, COLOR565(0, 0, 0)); // Black (cursor color)
     cursor->visible = !cursor->visible;
 }
 

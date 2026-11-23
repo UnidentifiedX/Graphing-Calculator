@@ -35,6 +35,4 @@ void st7789_draw_char(ST7789 *display, uint16_t x, uint16_t y, char c, uint16_t 
 void st7789_draw_string(ST7789 *display, uint16_t x, uint16_t y, const char* str, uint16_t color, uint8_t scale, uint16_t bg);
 void st7789_set_brightness(ST7789 *display, uint8_t brightness);
 
-static inline uint16_t color565(uint8_t r, uint8_t g, uint8_t b) {
-    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-}
+#define COLOR565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3))

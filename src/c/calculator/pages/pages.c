@@ -9,7 +9,7 @@ static const uint8_t ST7789_PIN_RESET = 8;
 static const uint8_t ST7789_PIN_DC    = 9;
 static const uint8_t ST7789_PIN_PWM   = 10;
 
-#define TOP_BAR_BG_COLOR color565(64, 64, 64)
+static const uint16_t TOP_BAR_BG_COLOR = COLOR565(64, 64, 64);
 
 void init_page_manager(PageManager* manager) {
     manager->display = (ST7789){
@@ -34,5 +34,9 @@ void set_page(PageManager* manager, Page* page) {
 // shi used for info about the calc
 void render_top_bar(ST7789* display) {
     st7789_fill_rect(display, 0, 0, ST7789_WIDTH, TOP_BAR_HEIGHT, TOP_BAR_BG_COLOR); // background
-    st7789_draw_string(display, TOP_BAR_LEFT_MARGIN, TOP_BAR_TOP_MARGIN, "NORMAL FLOAT AUTO READ RADIAN MP", color565(255, 255, 255), 1, TOP_BAR_BG_COLOR); // info text
+    st7789_draw_string(display, TOP_BAR_LEFT_MARGIN, TOP_BAR_TOP_MARGIN, "NORMAL FLOAT AUTO READ RADIAN MP", COLOR565(255, 255, 255), 1, TOP_BAR_BG_COLOR); // info text
+}
+
+void clear_display(ST7789* display, uint16_t bg_color) {
+    st7789_fill_rect(display, 0, TOP_BAR_HEIGHT, ST7789_WIDTH, ST7789_HEIGHT, bg_color);
 }
