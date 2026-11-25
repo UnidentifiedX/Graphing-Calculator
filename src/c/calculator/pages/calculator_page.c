@@ -9,6 +9,7 @@
 #include "calculator/ui/expression_drawer.h"
 #include "core/inbuilt_functions.h"
 #include "calculator/pages/graphing_page.h"
+#include "calculator/pages/graph_page.h"
 
 #define CALCULATOR_PAGE_MAX_HISTORY_SIZE 4
 
@@ -70,7 +71,7 @@ static void keystroke_to_action(PageManager* manager, Keystroke key);
 
 static void init(Page* self, PageManager* manager) {
     ST7789* display = &manager->display;
-    clear_display(display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
+    clear_display(display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR, true);
     init_cursor(&calculator_page_data.cursor, display, CALCULATOR_PAGE_CURSOR_HEIGHT, CALCULATOR_PAGE_CURSOR_THICKNESS);
     render_expressions(display);
     enable_cursor(&calculator_page_data.cursor);
@@ -209,14 +210,7 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_PI:                insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "pi" }); break;
         case KEYSTROKE_E:                 insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "e" }); break;
         case KEYSTROKE_ENTER: {
-            Expression expressions[256];
-            SyntaxToken tokens[256];
-            size_t token_count = to_tokens(expr, tokens, 256);
-
-            Parser parser;
-            init_parser(&parser, tokens, token_count);
-            size_t root_index = parse(&parser, expressions, 256);
-            double result = evaluate(expressions, root_index);
+            double result = evaluate_token_expression(expr, &(VariableEnvironment){ .variables = NULL, .count = 0 });
 
             // for now since all results are numbers we make the output an expression with a single number node
             TokenExpression result_expr;
@@ -249,7 +243,7 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_CLEAR: {
             // clear the current expression. if clear clear the whole history as well
             if (expr->size == 0) {
-                clear_display(&manager->display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
+                clear_display(&manager->display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR, false);
                 clear_history();
             }
             reset_token_expression(expr);
@@ -258,14 +252,15 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_LEFT: shift_cursor(expr, CURSOR_DIRECTION_LEFT); break;
         case KEYSTROKE_RIGHT: shift_cursor(expr, CURSOR_DIRECTION_RIGHT); break;
         case KEYSTROKE_GRAPH: set_page(manager, &graphing_page); return;
+        case KEYSTROKE_PLOT: set_page(manager, &graph_page); return;
         default: return;
     }
 
-    // printf("Current expression: ");
-    // output_token_expression(expr);
-    // printf("Current cursors: node_index = %zu, char_index = %zu\n", expr->node_index, expr->char_index);
-    // printf("\n");
+    // // printf("Current expression: ");
+    // // output_token_expression(expr);
+    // // printf("Current cursors: node_index = %zu, char_index = %zu\n", expr->node_index, expr->char_index);
+    // // printf("\n");
     
-    clear_display(&manager->display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR);
+    clear_display(&manager->display, CALCULATOR_PAGE_EXPRESSION_BG_COLOR, false);
     render_expressions(&manager->display);
 }

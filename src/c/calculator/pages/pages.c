@@ -37,6 +37,6 @@ void render_top_bar(ST7789* display) {
     st7789_draw_string(display, TOP_BAR_LEFT_MARGIN, TOP_BAR_TOP_MARGIN, "NORMAL FLOAT AUTO READ RADIAN MP", COLOR565(255, 255, 255), 1, TOP_BAR_BG_COLOR); // info text
 }
 
-void clear_display(ST7789* display, uint16_t bg_color) {
-    st7789_fill_rect(display, 0, TOP_BAR_HEIGHT, ST7789_WIDTH, ST7789_HEIGHT, bg_color);
+void clear_display(ST7789* display, uint16_t bg_color, bool clear_top_bar) {
+    st7789_fill_rect(display, 0, clear_top_bar ? 0 : TOP_BAR_HEIGHT, ST7789_WIDTH, ST7789_HEIGHT, bg_color);
 }

@@ -55,6 +55,12 @@ def write_to_serial(x):
             ser.write(b'G')
         case "mode":
             ser.write(b'M')
+        case "plot":
+            ser.write(b'P')
+        case "trace":
+            ser.write(b'T')
+        case "zoom":
+            ser.write(b'Z')
 
 def press(x):
     global ser
@@ -75,6 +81,7 @@ label = tk.Entry(
 label.grid(row=0, column=0, columnspan=4)
 
 buttons = [
+    "plot", "y", "trace", "zoom",
     "quit", "graph", "x", "mode",
     "e", "ln", "nrt", "abs",
     "pi", "frac", "sqrt", "pow",

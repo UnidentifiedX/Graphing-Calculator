@@ -1,4 +1,5 @@
 #include "evaluator.h"
+#include "parser.h"
 #include "expression.h"
 #include <math.h>
 #include <string.h>
@@ -42,7 +43,17 @@ double call_inbuilt_function(InbuiltFunction func, double* args, size_t argc) {
     }
 }
 
-double evaluate(const Expression* expressions, size_t index) {
+double get_variable_value(const char* name, const VariableEnvironment* env) {
+    for (size_t i = 0; i < env->count; i++) {
+        if (strcmp(env->variables[i].name, name) == 0) {
+            return env->variables[i].value;
+        }
+    }
+    fprintf(stderr, "Error: Undefined variable '%s'\n", name);
+    return NAN;
+}
+
+double evaluate(const Expression* expressions, size_t index, const VariableEnvironment* env) {
     const Expression* expression = &expressions[index];
 
     switch (expression->type) {
@@ -51,15 +62,18 @@ double evaluate(const Expression* expressions, size_t index) {
         case EXPRESSION_TYPE_VARIABLE: {
             InbuiltConstant constant = get_constant_from_name(expression->value.variable);
             double constant_value = get_constant(constant);
-            if (!isnan(constant_value)) {
-                return constant_value;
-            } else {
-                fprintf(stderr, "Error: Undefined variable '%s'\n", expression->value.variable);
-                return NAN;
-            }
+            
+            if (!isnan(constant_value)) return constant_value; // inbuilt constant
+
+            double variable_value = get_variable_value(expression->value.variable, env);
+            printf("Variable value: %g\n", variable_value);
+            if (!isnan(variable_value)) return variable_value; // user-defined variable
+            
+            fprintf(stderr, "Error: Undefined variable '%s'\n", expression->value.variable);
+            return NAN;
         }
         case EXPRESSION_TYPE_UNARY: {
-            double operand = evaluate(expressions, expression->value.unary.operand_index);
+            double operand = evaluate(expressions, expression->value.unary.operand_index, env);
             switch (expression->value.unary.operator.kind) {
                 case SYNTAX_KIND_PLUS:
                     return operand;
@@ -71,7 +85,7 @@ double evaluate(const Expression* expressions, size_t index) {
             }
         }
         case EXPRESSION_TYPE_POSTFIX: {
-            double operand = evaluate(expressions, expression->value.postfix.operand_index);
+            double operand = evaluate(expressions, expression->value.postfix.operand_index, env);
             switch (expression->value.postfix.operator.kind) {
                 case SYNTAX_KIND_FACTORIAL: {
                     if (operand < 0 || floor(operand) != operand) {
@@ -99,8 +113,8 @@ double evaluate(const Expression* expressions, size_t index) {
             }
         }
         case EXPRESSION_TYPE_BINARY: {
-            double left = evaluate(expressions, expression->value.binary.left_index);
-            double right = evaluate(expressions, expression->value.binary.right_index);
+            double left = evaluate(expressions, expression->value.binary.left_index, env);
+            double right = evaluate(expressions, expression->value.binary.right_index, env);
             switch (expression->value.binary.operator.kind) {
                 case SYNTAX_KIND_PLUS:
                     return left + right;
@@ -130,9 +144,21 @@ double evaluate(const Expression* expressions, size_t index) {
 
             double args[MAX_ARGUMENTS];
             for (size_t i = 0; i < expression->value.call.argument_count; i++) {
-                args[i] = evaluate(expressions, expression->value.call.argument_indices[i]);
+                args[i] = evaluate(expressions, expression->value.call.argument_indices[i], env);
             }
             return call_inbuilt_function(func, args, expression->value.call.argument_count);
         }
     }
+}
+
+double evaluate_token_expression(TokenExpression* expr, const VariableEnvironment* env) {
+    Expression expressions[256];
+    SyntaxToken tokens[256];
+    size_t token_count = to_tokens(expr, tokens, 256);
+
+    Parser parser;
+    init_parser(&parser, tokens, token_count);
+    size_t root_index = parse(&parser, expressions, 256);
+    
+    return evaluate(expressions, root_index, env);
 }

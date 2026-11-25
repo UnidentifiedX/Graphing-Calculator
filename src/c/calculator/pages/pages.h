@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include "st7789/st7789.h"
 #include "calculator/keystrokes.h"
+#include "calculator/evaluator/token_expression.h"
+#include "core/evaluator.h"
 
 static const uint16_t TOP_BAR_HEIGHT = 30;
 static const uint16_t TOP_BAR_TOP_MARGIN = 2;
@@ -25,4 +27,4 @@ typedef struct Page {
 void init_page_manager(PageManager* manager);
 void set_page(PageManager* manager, Page* page);
 void render_top_bar(ST7789* display);
-void clear_display(ST7789* display, uint16_t bg_color);
+void clear_display(ST7789* display, uint16_t bg_color, bool clear_top_bar);

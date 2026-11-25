@@ -2,6 +2,8 @@
 #include "st7789/st7789.h"
 #include "calculator/keystrokes.h"
 #include "calculator/pages/calculator_page.h"
+#include "calculator/pages/graph_page.h"
+#include "calculator/pages/graphing_page.h"
 #include "calculator/ui/expression_drawer.h"
 #include "calculator/ui/cursor.h"
 
@@ -17,30 +19,16 @@ static const uint16_t SEPARATOR_LINE_MARGIN               = 10; // leave some ma
 static const uint16_t SEPARATOR_LINE_THICKNESS            = 1; // thickness of the separator line
 static const uint16_t LINE_COLOR_BOX_WIDTH                = 5; // width of the color label box
 
-#define GRAPHING_PAGE_MAX_PLOTS 3
-
 static void keystroke_to_action(PageManager* manager, Keystroke key);
 static void render_expressions(ST7789* display);
 
-static uint16_t line_colors[GRAPHING_PAGE_MAX_PLOTS] = {
+const uint16_t line_colors[GRAPHING_PAGE_MAX_PLOTS] = {
     COLOR565(255, 0, 0), // Red
-    COLOR565(0, 255, 0), // Green
+    COLOR565(0, 100, 0), // Green
     COLOR565(0, 0, 255), // Blue
-    // COLOR565(255, 255, 0), // Yellow
-    // COLOR565(255, 0, 255)  // Magenta
+    COLOR565(255, 255, 0), // Yellow
+    COLOR565(255, 0, 255)  // Magenta
 };
-
-typedef struct {
-    TokenExpression expression;
-    ExpressionDimensions expression_dimensions;
-} PlottingExpression;
-
-typedef struct {
-    PlottingExpression plotting_expressions[GRAPHING_PAGE_MAX_PLOTS];
-    size_t current_selected_plot_index;
-
-    Cursor cursor;
-} GraphingPageData;
 
 static GraphingPageData graphing_page_data = {
     .current_selected_plot_index = 0,
@@ -49,7 +37,7 @@ static GraphingPageData graphing_page_data = {
 
 static void init(Page* self, PageManager* manager) {
     ST7789* display = &manager->display;
-    clear_display(display, GRAPHING_PAGE_EXPRESSION_BG_COLOR);
+    clear_display(display, GRAPHING_PAGE_EXPRESSION_BG_COLOR, true);
     init_cursor(&graphing_page_data.cursor, display, GRAPHING_PAGE_EXPRESSION_FONT_SCALE * FONT_HEIGHT_6x8, GRAPHING_PAGE_CURSOR_THICKNESS);
     render_expressions(display);
     render_top_bar(display);
@@ -136,7 +124,6 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
     TokenExpression* expr = &graphing_page_data.plotting_expressions[graphing_page_data.current_selected_plot_index].expression;
 
     switch (key) {
-        case KEYSTROKE_QUIT: set_page(manager, &calculator_page); return;
         case KEYSTROKE_0:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "0" }); break;
         case KEYSTROKE_1:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "1" }); break;
         case KEYSTROKE_2:                 insert_node(expr, &(Node){ .type = NODE_TYPE_NUMBER, .node.num_str = "2" }); break;
@@ -168,13 +155,13 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
         case KEYSTROKE_PI:                insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "pi" }); break;
         case KEYSTROKE_E:                 insert_node(expr, &(Node){ .type = NODE_TYPE_VARIABLE, .node.var_identifier = "e" }); break;
         case KEYSTROKE_ENTER: {
-            break;
+            return;
         }
         case KEYSTROKE_BACKSPACE: backspace_node(expr); break;
         case KEYSTROKE_CLEAR: {
             // clear the current expression
             if (expr->size == 0) {
-                clear_display(&manager->display, GRAPHING_PAGE_EXPRESSION_BG_COLOR);
+                clear_display(&manager->display, GRAPHING_PAGE_EXPRESSION_BG_COLOR, false);
             }
             reset_token_expression(expr);
             break;
@@ -193,9 +180,11 @@ static void keystroke_to_action(PageManager* manager, Keystroke key) {
             }
             break;
         }
+        case KEYSTROKE_QUIT: set_page(manager, &calculator_page); return;
+        case KEYSTROKE_PLOT: set_page(manager, &graph_page); return;
         default: return;
     }
 
-    clear_display(&manager->display, GRAPHING_PAGE_EXPRESSION_BG_COLOR);
+    clear_display(&manager->display, GRAPHING_PAGE_EXPRESSION_BG_COLOR, false);
     render_expressions(&manager->display);
 }
